@@ -20,6 +20,7 @@ export default async function MovementsPage({
     type?: string;
     extraordinary?: string;
     q?: string;
+    sort?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -98,6 +99,7 @@ export default async function MovementsPage({
         params.type,
         params.extraordinary,
         params.q,
+        params.sort,
         params.from,
       ].join("|")}
       month={month}

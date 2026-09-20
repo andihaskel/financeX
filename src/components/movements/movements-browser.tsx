@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   MovementsFilters,
   type MovementsFilterValues,
+  type MovementsSort,
 } from "@/components/movements/movements-filters";
 import { MovementsList } from "@/components/movements/movements-list";
 import { SectionTitle, SurfaceCard } from "@/components/ui/surface";
@@ -15,6 +16,10 @@ import {
 import type { Account, Category, TransactionType, TransactionWithRelations } from "@/types/database";
 
 const PAGE_SIZE = 10;
+
+function parseSort(value: string | undefined): MovementsSort {
+  return value === "amount" ? "amount" : "date";
+}
 
 function filtersFromInitial(initial: Record<string, string | undefined>): MovementsFilterValues {
   const extraordinary =
@@ -30,6 +35,7 @@ function filtersFromInitial(initial: Record<string, string | undefined>): Moveme
     type: initial.type ?? "",
     extraordinary,
     q: initial.q ?? "",
+    sort: parseSort(initial.sort),
   };
 }
 
@@ -46,6 +52,7 @@ function syncFiltersToUrl(
   if (filters.type) params.set("type", filters.type);
   if (filters.extraordinary) params.set("extraordinary", filters.extraordinary);
   if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.sort !== "date") params.set("sort", filters.sort);
   const query = params.toString();
   const href = query ? `/movements?${query}` : "/movements";
   window.history.replaceState(window.history.state, "", href);
@@ -70,6 +77,18 @@ function isExtraordinaryMovement(
   return category?.group === "extraordinary";
 }
 
+function compareByDate(a: TransactionWithRelations, b: TransactionWithRelations) {
+  const byDate = b.transaction_date.localeCompare(a.transaction_date);
+  if (byDate !== 0) return byDate;
+  return (b.created_at ?? "").localeCompare(a.created_at ?? "");
+}
+
+function compareByAmount(a: TransactionWithRelations, b: TransactionWithRelations) {
+  const byAbs = Math.abs(b.amount) - Math.abs(a.amount);
+  if (byAbs !== 0) return byAbs;
+  return compareByDate(a, b);
+}
+
 export function MovementsBrowser({
   month,
   year,
@@ -90,7 +109,10 @@ export function MovementsBrowser({
 
   function onFilterChange(key: keyof MovementsFilterValues, value: string) {
     setFilters((prev) => {
-      const next: MovementsFilterValues = { ...prev, [key]: value };
+      const next: MovementsFilterValues = {
+        ...prev,
+        [key]: key === "sort" ? parseSort(value) : value,
+      };
 
       if (key === "type") {
         if (value && typeNeedsCategory(value as TransactionType)) {
@@ -114,7 +136,7 @@ export function MovementsBrowser({
   }
 
   const filtered = useMemo(() => {
-    return transactions.filter((tx) => {
+    const rows = transactions.filter((tx) => {
       if (filters.account && tx.account_id !== filters.account) return false;
       if (filters.category && tx.category_id !== filters.category) return false;
       if (filters.type && tx.transaction_type !== filters.type) return false;
@@ -127,6 +149,8 @@ export function MovementsBrowser({
       if (!matchesQuery(tx, filters.q)) return false;
       return true;
     });
+
+    return [...rows].sort(filters.sort === "amount" ? compareByAmount : compareByDate);
   }, [transactions, filters, categories]);
 
   const visible = filtered.slice(0, visibleCount);
@@ -158,7 +182,11 @@ export function MovementsBrowser({
               ? `${filtered.length} movement${filtered.length === 1 ? "" : "s"}`
               : `Showing ${visible.length} of ${filtered.length}`}
           </SectionTitle>
-          <MovementsList transactions={visible} categories={categories} />
+          <MovementsList
+            transactions={visible}
+            categories={categories}
+            groupByDate={filters.sort === "date"}
+          />
           {remaining > 0 && (
             <div className="border-t border-[#F1EFF7] pt-1">
               <button

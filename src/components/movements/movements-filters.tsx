@@ -23,12 +23,20 @@ const TYPE_OPTIONS = [
   { value: "credit_card_payment", label: "Card payment" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "date", label: "Date" },
+  { value: "amount", label: "Amount" },
+];
+
+export type MovementsSort = "date" | "amount";
+
 export type MovementsFilterValues = {
   account: string;
   category: string;
   type: string;
   extraordinary: string;
   q: string;
+  sort: MovementsSort;
 };
 
 export function MovementsFilters({
@@ -63,6 +71,8 @@ export function MovementsFilters({
     categories.find((c) => c.id === filters.category)?.name ?? "Category";
   const typeLabel =
     TYPE_OPTIONS.find((t) => t.value === (filters.type ?? ""))?.label ?? "Type";
+  const sortLabel =
+    SORT_OPTIONS.find((s) => s.value === filters.sort)?.label ?? "Date";
 
   return (
     <div className="space-y-3.5">
@@ -140,6 +150,12 @@ export function MovementsFilters({
             { value: "", label: "All categories" },
             ...categoryOptions.map((c) => ({ value: c.id, label: c.name })),
           ]}
+        />
+        <FilterDropdown
+          label={`Sort: ${sortLabel} ▾`}
+          value={filters.sort}
+          onChange={(value) => onFilterChange("sort", value)}
+          options={SORT_OPTIONS}
         />
         <button
           type="button"

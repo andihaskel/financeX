@@ -443,15 +443,39 @@ function MovementRow({
 export function MovementsList({
   transactions,
   categories,
+  groupByDate: shouldGroupByDate = true,
 }: {
   transactions: TransactionWithRelations[];
   categories: Category[];
+  groupByDate?: boolean;
 }) {
   const [items, setItems] = useState(transactions);
 
   useEffect(() => {
     setItems(transactions);
   }, [transactions]);
+
+  function renderRow(tx: TransactionWithRelations) {
+    return (
+      <MovementRow
+        key={tx.id}
+        tx={tx}
+        categories={categories}
+        onDeleted={(id) =>
+          setItems((current) => current.filter((item) => item.id !== id))
+        }
+        onUpdated={(next) =>
+          setItems((current) =>
+            current.map((item) => (item.id === next.id ? next : item))
+          )
+        }
+      />
+    );
+  }
+
+  if (!shouldGroupByDate) {
+    return <SurfaceCard className="px-5 py-1">{items.map(renderRow)}</SurfaceCard>;
+  }
 
   const groups = groupByDate(items);
 
@@ -462,23 +486,7 @@ export function MovementsList({
           <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-[#9E9AB0]">
             {format(parseISO(date), "EEEE, MMM d")}
           </p>
-          <SurfaceCard className="px-5 py-1">
-            {rows.map((tx) => (
-              <MovementRow
-                key={tx.id}
-                tx={tx}
-                categories={categories}
-                onDeleted={(id) =>
-                  setItems((current) => current.filter((item) => item.id !== id))
-                }
-                onUpdated={(next) =>
-                  setItems((current) =>
-                    current.map((item) => (item.id === next.id ? next : item))
-                  )
-                }
-              />
-            ))}
-          </SurfaceCard>
+          <SurfaceCard className="px-5 py-1">{rows.map(renderRow)}</SurfaceCard>
         </div>
       ))}
     </div>
