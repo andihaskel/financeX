@@ -411,7 +411,7 @@ function CommitmentRow({
     ? monthTransactions.find((tx) => tx.id === row.occurrence.reconciled_transaction_id)
     : null;
 
-  const nameScroll = useSyncedHorizontalScroll<HTMLButtonElement>();
+  const nameScroll = useSyncedHorizontalScroll<HTMLDivElement>();
   const matchedScroll = useSyncedHorizontalScroll<HTMLDivElement>();
 
   const filteredMovements = (() => {
