@@ -22,13 +22,13 @@ import { formatMoney, formatPercent, formatTransactionAmount } from "@/lib/desig
 import { getAccountDisplayName } from "@/lib/accounts/helpers";
 import { getCategoryVisual } from "@/lib/design/theme";
 import {
-  getAccounts,
+  getActiveAccounts,
   getBudgetComparison,
   getDashboardMetrics,
   getMonthTransactions,
 } from "@/lib/queries/finance";
-import { getMonthImportCoverage } from "@/lib/queries/import-coverage";
-import { createClient, getUser } from "@/lib/supabase/server";
+import { buildMonthImportCoverage } from "@/lib/queries/import-coverage";
+import { getUser } from "@/lib/supabase/server";
 import { ImportCoveragePanel } from "@/components/accounts/import-coverage";
 
 export default async function MonthPage({
@@ -42,8 +42,13 @@ export default async function MonthPage({
   const user = await getUser();
   if (!user) notFound();
 
-  const { transactions } = await getMonthTransactions(month);
-  const accounts = await getAccounts();
+  const [{ transactions, categories }, accounts, metrics, budgets] = await Promise.all([
+    getMonthTransactions(month),
+    getActiveAccounts(),
+    getDashboardMetrics(month),
+    getBudgetComparison(month),
+  ]);
+
   const deleteTargets = getDeleteMovementsTargets(
     accounts,
     transactions.map((transaction) => ({ account_id: transaction.account_id }))
@@ -51,9 +56,29 @@ export default async function MonthPage({
   const deleteCountByAccount = new Map(
     deleteTargets.map((target) => [target.accountId, target.count])
   );
-  const metrics = await getDashboardMetrics(month);
-  const budgets = await getBudgetComparison(month);
-  const importCoverage = await getMonthImportCoverage(month);
+  const importCoverage = buildMonthImportCoverage(
+    month,
+    accounts,
+    new Set(transactions.map((transaction) => transaction.account_id))
+  );
+
+  const accountById = new Map(accounts.map((account) => [account.id, account]));
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const recent = transactions.slice(0, 5).map((tx) => {
+    const account = accountById.get(tx.account_id) ?? null;
+    const category = tx.category_id ? categoryById.get(tx.category_id) ?? null : null;
+    return {
+      id: tx.id,
+      description: tx.description,
+      transaction_date: tx.transaction_date,
+      amount: tx.amount,
+      currency: tx.currency,
+      accounts: account
+        ? { name: account.name, type: account.type, currency: account.currency }
+        : null,
+      categories: category ? { name: category.name, slug: category.slug } : null,
+    };
+  });
 
   const monthNameOnly = format(parseISO(`${month}-01`), "MMMM");
 
@@ -77,28 +102,16 @@ export default async function MonthPage({
               + Add {monthNameOnly} movements
             </span>
           </OpenImportButton>
-          {importCoverage && (
-            <div className="mx-auto mt-6 max-w-sm text-left">
-              <ImportCoveragePanel
-                monthLabel={importCoverage.monthLabel}
-                accounts={importCoverage.accounts}
-              />
-            </div>
-          )}
+          <div className="mx-auto mt-6 max-w-sm text-left">
+            <ImportCoveragePanel
+              monthLabel={importCoverage.monthLabel}
+              accounts={importCoverage.accounts}
+            />
+          </div>
         </SurfaceCard>
       </div>
     );
   }
-
-  const supabase = await createClient();
-  const { data: recent } = await supabase
-    .from("transactions")
-    .select("*, accounts(id, name, type, currency), categories(name, slug)")
-    .eq("user_id", user.id)
-    .gte("transaction_date", `${month}-01`)
-    .lte("transaction_date", month + "-31")
-    .order("transaction_date", { ascending: false })
-    .limit(5);
 
   return (
     <div className="space-y-7">
@@ -114,9 +127,7 @@ export default async function MonthPage({
         <p className="mb-2 text-[15px] font-semibold opacity-85">
           How did {monthNameOnly} go?
         </p>
-        {importCoverage && (
-          <MissingImportBadge month={month} accounts={importCoverage.accounts} />
-        )}
+        <MissingImportBadge month={month} accounts={importCoverage.accounts} />
         <div className="grid gap-3.5 sm:grid-cols-3">
           <Link
             href={buildMovementsHref({
@@ -152,20 +163,18 @@ export default async function MonthPage({
         </div>
       </GradientHero>
 
-      {importCoverage && (
-        <MonthDataPanel
-          month={month}
-          monthLabel={monthNameOnly}
-          accounts={importCoverage.accounts.map((account) => ({
-            id: account.id,
-            name: account.name,
-            shortLabel: account.shortLabel,
-            imported: account.imported,
-            count: deleteCountByAccount.get(account.id) ?? 0,
-            color: accountDotColor(account.shortLabel),
-          }))}
-        />
-      )}
+      <MonthDataPanel
+        month={month}
+        monthLabel={monthNameOnly}
+        accounts={importCoverage.accounts.map((account) => ({
+          id: account.id,
+          name: account.name,
+          shortLabel: account.shortLabel,
+          imported: account.imported,
+          count: deleteCountByAccount.get(account.id) ?? 0,
+          color: accountDotColor(account.shortLabel),
+        }))}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SurfaceCard>
@@ -221,15 +230,7 @@ export default async function MonthPage({
 
       <SectionTitle>Recent movements</SectionTitle>
       <SurfaceCard className="px-6 py-1">
-        {(recent ?? []).map((tx: {
-          id: string;
-          description: string;
-          transaction_date: string;
-          amount: number;
-          currency: "USD" | "UYU";
-          accounts: { name: string; type: string; currency: "USD" | "UYU" } | null;
-          categories: { name: string; slug: string } | null;
-        }) => {
+        {recent.map((tx) => {
           const visual = getCategoryVisual(tx.categories?.slug);
           const accountName = tx.accounts
             ? getAccountDisplayName(tx.accounts as Parameters<typeof getAccountDisplayName>[0])

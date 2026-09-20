@@ -105,32 +105,33 @@ export const getUserSettings = cache(async (): Promise<UserSettings | null> => {
   return data as UserSettings | null;
 });
 
-export async function getMonthTransactions(month: string) {
+export const getMonthTransactions = cache(async (month: string) => {
   const user = await getUser();
   if (!user) return { transactions: [], categories: [], settings: null };
 
   const supabase = await createClient();
   const { start, end } = getMonthDateRange(month);
 
-  const [txResult, catResult, settingsResult] = await Promise.all([
+  const [txResult, categories, settings] = await Promise.all([
     supabase
       .from("transactions")
       .select("*")
       .eq("user_id", user.id)
       .gte("transaction_date", start)
-      .lte("transaction_date", end),
-    supabase.from("categories").select("*").eq("user_id", user.id).eq("active", true),
-    supabase.from("user_settings").select("*").eq("user_id", user.id).single(),
+      .lte("transaction_date", end)
+      .order("transaction_date", { ascending: false }),
+    getCategories(),
+    getUserSettings(),
   ]);
 
   return {
     transactions: (txResult.data ?? []) as Transaction[],
-    categories: (catResult.data ?? []) as Category[],
-    settings: settingsResult.data as UserSettings | null,
+    categories,
+    settings,
   };
-}
+});
 
-export async function getDashboardMetrics(month: string) {
+export const getDashboardMetrics = cache(async (month: string) => {
   const { transactions, categories, settings } = await getMonthTransactions(month);
   const uyuRate = settings?.uyu_to_usd_rate ?? 40;
   const savingsTarget = (settings?.savings_target_percent ?? 40) / 100;
@@ -167,18 +168,20 @@ export async function getDashboardMetrics(month: string) {
     spendingByCategory,
     uyuRate,
   };
-}
+});
 
-export async function getBudgetComparison(month: string) {
+export const getBudgetComparison = cache(async (month: string) => {
   const user = await getUser();
   if (!user) return [];
 
   const supabase = await createClient();
   const monthStart = `${month}-01`;
-  const { transactions, categories, settings } = await getMonthTransactions(month);
+  const [{ transactions, categories, settings }, budgetMap] = await Promise.all([
+    getMonthTransactions(month),
+    resolveBudgetAmountsForMonth(supabase, user.id, monthStart),
+  ]);
   const uyuRate = settings?.uyu_to_usd_rate ?? 40;
 
-  const budgetMap = await resolveBudgetAmountsForMonth(supabase, user.id, monthStart);
   const actuals = groupSpendingByCategory(transactions, categories, uyuRate);
   const actualMap = new Map(actuals.map((a) => [a.categoryId, a.amount]));
   const categoryById = new Map(categories.map((c) => [c.id, c]));
@@ -204,7 +207,7 @@ export async function getBudgetComparison(month: string) {
     .filter((row) => row.group !== "income")
     .filter((row) => row.actual > 0 || row.budget > 0)
     .sort((a, b) => b.actual - a.actual);
-}
+});
 
 export async function getTargetBudgets(month: string) {
   const user = await getUser();
@@ -291,7 +294,7 @@ export async function getMonthlyTrend(currentMonth: string) {
   return results;
 }
 
-export const getAccounts = cache(async () => {
+export const getActiveAccounts = cache(async () => {
   const user = await getUser();
   if (!user) return [];
 
@@ -303,7 +306,11 @@ export const getAccounts = cache(async () => {
     .eq("active", true)
     .order("name");
 
-  return dedupeAccounts((data ?? []) as Account[]);
+  return (data ?? []) as Account[];
+});
+
+export const getAccounts = cache(async () => {
+  return dedupeAccounts(await getActiveAccounts());
 });
 
 export const getCategories = cache(async () => {

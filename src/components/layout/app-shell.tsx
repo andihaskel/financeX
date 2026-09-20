@@ -31,10 +31,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b border-[#F1EFF7] bg-white px-4 md:hidden">
-          <div className="flex items-center gap-2">
+          <Link href="/apps" className="flex items-center gap-2 hover:opacity-80">
             <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#9B6FF0] to-[#6C3FD1]" />
             <span className="font-extrabold">financeX</span>
-          </div>
+          </Link>
           <Sheet>
             <SheetTrigger className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
               <Menu className="h-4 w-4" />

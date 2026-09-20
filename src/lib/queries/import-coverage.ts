@@ -4,9 +4,9 @@ import {
   dedupeAccounts,
   getAccountDisplayName,
   getAccountShortLabel,
-  sortAccounts,
 } from "@/lib/accounts/helpers";
 import { getMonthDateRange } from "@/components/dashboard/month-nav";
+import { getActiveAccounts } from "@/lib/queries/finance";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type { Account } from "@/types/database";
 
@@ -23,7 +23,7 @@ export interface MonthImportCoverage {
   accounts: AccountImportStatus[];
 }
 
-function buildCoverage(
+export function buildMonthImportCoverage(
   month: string,
   accounts: Account[],
   importedAccountIds: Set<string>
@@ -52,36 +52,27 @@ function buildCoverage(
   };
 }
 
-async function getImportedAccountIdsForMonth(month: string): Promise<Set<string>> {
-  const user = await getUser();
-  if (!user) return new Set();
-
-  const supabase = await createClient();
-  const { start, end } = getMonthDateRange(month);
-
-  const { data } = await supabase
-    .from("transactions")
-    .select("account_id")
-    .eq("user_id", user.id)
-    .gte("transaction_date", start)
-    .lte("transaction_date", end);
-
-  return new Set((data ?? []).map((row: { account_id: string }) => row.account_id));
-}
-
 export async function getMonthImportCoverage(month: string): Promise<MonthImportCoverage | null> {
   const user = await getUser();
   if (!user) return null;
 
   const supabase = await createClient();
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("active", true);
+  const { start, end } = getMonthDateRange(month);
 
-  const importedAccountIds = await getImportedAccountIdsForMonth(month);
-  return buildCoverage(month, (accounts ?? []) as Account[], importedAccountIds);
+  const [accounts, { data: accountRows }] = await Promise.all([
+    getActiveAccounts(),
+    supabase
+      .from("transactions")
+      .select("account_id")
+      .eq("user_id", user.id)
+      .gte("transaction_date", start)
+      .lte("transaction_date", end),
+  ]);
+
+  const importedAccountIds = new Set(
+    (accountRows ?? []).map((row: { account_id: string }) => row.account_id)
+  );
+  return buildMonthImportCoverage(month, accounts, importedAccountIds);
 }
 
 export async function getYearImportCoverageMap(

@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 const protectedPrefixes = [
+  "/apps",
   "/home",
   "/month",
   "/movements",
@@ -49,10 +50,13 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
-    pathname.startsWith("/login") || pathname.startsWith("/signup");
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/forgot-password");
+  const isResetPassword = pathname.startsWith("/reset-password");
   const isProtectedRoute = protectedPrefixes.some((p) => pathname.startsWith(p));
 
-  if (!user && isProtectedRoute) {
+  if (!user && (isProtectedRoute || isResetPassword)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", pathname);
@@ -61,13 +65,13 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/home";
+    url.pathname = "/apps";
     return NextResponse.redirect(url);
   }
 
   if (pathname === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = user ? "/home" : "/login";
+    url.pathname = user ? "/apps" : "/login";
     return NextResponse.redirect(url);
   }
 
