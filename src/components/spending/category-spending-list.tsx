@@ -48,11 +48,13 @@ export function AnnualCategoryList({
           <Link
             key={cat.categoryId}
             href={movementsHref(cat.categoryId)}
-            className="flex items-center gap-3.5 border-b border-[#F1EFF7] py-3.5 last:border-0 transition-colors hover:bg-[#FAF9FC]"
+            className="flex items-center gap-2 border-b border-[#F1EFF7] py-3.5 last:border-0 transition-colors hover:bg-[#FAF9FC] sm:gap-3.5"
           >
             <CategoryChip emoji={visual.emoji} color={visual.chipColor} />
-            <span className="w-40 shrink-0 text-sm font-semibold">{cat.name}</span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F1EFF7]">
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:w-40 sm:flex-none sm:shrink-0">
+              {cat.name}
+            </span>
+            <div className="hidden h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#F1EFF7] sm:block">
               <div
                 className="h-full rounded-full"
                 style={{
@@ -61,7 +63,7 @@ export function AnnualCategoryList({
                 }}
               />
             </div>
-            <span className="w-24 shrink-0 text-right text-sm font-bold">
+            <span className="shrink-0 text-right text-sm font-bold tabular-nums sm:w-24">
               {formatMoney(cat.amount)}
             </span>
           </Link>

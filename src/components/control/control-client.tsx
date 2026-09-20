@@ -501,7 +501,7 @@ function CommitmentRow({
         <StatusDot visual={visual} onClick={handleToggle} disabled={isPending} />
         <button
           type="button"
-          className="min-w-0 flex-1 overflow-x-auto text-left [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:overflow-hidden"
+          className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden text-left [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden md:overflow-hidden md:[touch-action:auto]"
           onClick={matchedLabel ? onToggleExpand : undefined}
           disabled={!matchedLabel}
         >
@@ -544,7 +544,7 @@ function CommitmentRow({
         </div>
       </div>
       {expanded && matchedLabel && (
-        <div className="mb-2 overflow-x-auto rounded-[12px] bg-[#F9F8FC] px-3.5 py-2 text-xs font-bold text-[#4B4860] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-2 overflow-x-auto overflow-y-hidden rounded-[12px] bg-[#F9F8FC] px-3.5 py-2 text-xs font-bold text-[#4B4860] [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden md:[touch-action:auto]">
           <p className="w-max whitespace-nowrap md:w-auto md:whitespace-normal">
             {matchedLabel}
           </p>

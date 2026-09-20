@@ -111,7 +111,7 @@ export default async function HomePage({
       {categories.length > 0 && (
         <>
           <SectionTitle>Where your money went</SectionTitle>
-          <SurfaceCard className="px-6 py-4">
+          <SurfaceCard className="px-4 py-4 sm:px-6">
             <SpendingBreakdown
               slices={slicesFromCategories(
                 categories.map((cat) => ({
