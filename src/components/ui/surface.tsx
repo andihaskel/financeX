@@ -48,7 +48,7 @@ export function GradientHero({
   return (
     <div
       className={cn(
-        "rounded-[28px] bg-gradient-to-br from-[#9B6FF0] to-[#5F3DC4] p-7 text-white",
+        "rounded-[28px] bg-gradient-to-br from-[#9B6FF0] to-[#5F3DC4] p-5 text-white sm:p-7",
         className
       )}
     >

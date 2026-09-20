@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-import { OpenImportButton } from "@/components/home/open-import-button";
+import { HomeMonthTiles } from "@/components/home/home-month-tiles";
 import { YearChart } from "@/components/home/year-chart";
-import { ImportCoverageCompact } from "@/components/accounts/import-coverage";
 import { AddMovementsButton } from "@/components/layout/floating-add-button";
 import { AnnualCategoryList } from "@/components/spending/category-spending-list";
 import { SpendingBreakdown } from "@/components/spending/spending-breakdown";
@@ -24,6 +23,7 @@ export default async function HomePage({
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
   const mostExpensive = categories[0]?.name ?? "—";
+  const coverageRecord = Object.fromEntries(coverageMap.entries());
 
   return (
     <div className="space-y-8">
@@ -43,7 +43,7 @@ export default async function HomePage({
           </Link>
         </div>
         <p className="mb-5 text-[15px] font-semibold opacity-85">How is {year} going?</p>
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
           {[
             ["Income", formatMoney(summary.totalIncome)],
             ["Spent", formatMoney(summary.totalSpent)],
@@ -59,44 +59,12 @@ export default async function HomePage({
       </GradientHero>
 
       <SectionTitle>Your months</SectionTitle>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {summary.months.map((m) => (
-          <Link
-            key={m.month}
-            href={`/month/${m.month}`}
-            className={`relative rounded-2xl p-4 transition-shadow hover:shadow-md ${
-              m.hasData
-                ? "bg-white shadow-[0_6px_20px_rgba(28,27,41,0.06)]"
-                : "border border-dashed border-[#E2DEF0] bg-[#FAF9FC]"
-            }`}
-          >
-            {m.month === currentMonth && (
-              <span className="absolute right-3.5 top-3 h-1.5 w-1.5 rounded-full bg-[#6C3FD1]" />
-            )}
-            <p
-              className={`text-[13px] font-bold ${m.hasData ? "text-[#1C1B29]" : "text-[#9E9AB0]"}`}
-            >
-              {m.short}
-            </p>
-            {m.hasData ? (
-              <>
-                <p className="mt-2 text-[15px] font-extrabold">Saved {formatMoney(m.saved)}</p>
-                <p className="mt-1 text-xs font-bold text-[#6C3FD1]">
-                  {formatPercent(m.savingsRate)}
-                </p>
-                <ImportCoverageCompact accounts={coverageMap.get(m.month) ?? []} />
-              </>
-            ) : (
-              <>
-                <OpenImportButton month={m.month} className="mt-2 text-xs font-bold text-[#6C3FD1]">
-                  + Add
-                </OpenImportButton>
-                <ImportCoverageCompact accounts={coverageMap.get(m.month) ?? []} />
-              </>
-            )}
-          </Link>
-        ))}
-      </div>
+      <HomeMonthTiles
+        year={year}
+        months={summary.months}
+        coverageMap={coverageRecord}
+        currentMonth={currentMonth}
+      />
 
       <SectionTitle>The year at a glance</SectionTitle>
       <SurfaceCard>
@@ -104,7 +72,7 @@ export default async function HomePage({
       </SurfaceCard>
 
       <SectionTitle>A few things about your year</SectionTitle>
-      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3.5">
         {[
           ["Average monthly spending", formatMoney(summary.avgSpending)],
           ["Average usual cost of living", formatMoney(summary.avgUsual)],

@@ -9,13 +9,13 @@ export default async function AppsPortalPage() {
   if (!user) notFound();
 
   return (
-    <div className="flex min-h-screen flex-col items-center px-6 py-16">
+    <div className="flex min-h-screen flex-col items-center px-6 py-10 sm:py-16">
       <div className="w-full max-w-[720px]">
         <div className="mb-2 flex items-center gap-2.5">
           <div className="h-[26px] w-[26px] rounded-[9px] bg-gradient-to-br from-[#9B6FF0] to-[#6C3FD1]" />
           <div className="text-base font-extrabold">Your space</div>
         </div>
-        <h1 className="mb-1.5 text-[32px] font-extrabold leading-tight tracking-tight">
+        <h1 className="mb-1.5 text-[28px] font-extrabold leading-tight tracking-tight sm:text-[32px]">
           Good to see you
         </h1>
         <p className="mb-10 text-[15px] font-semibold text-[#6E6B82]">

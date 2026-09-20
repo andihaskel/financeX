@@ -1107,7 +1107,7 @@ export function ControlClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3.5 whitespace-nowrap">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-3.5">
           <Link href={`/control?month=${prev}`} className="text-base text-[#6E6B82]">
             ‹

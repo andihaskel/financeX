@@ -2,24 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, Home, LineChart, Settings, Wallet } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { signOut } from "@/app/actions/auth";
+import { appNavItems, isNavActive } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
-
-const mainNav = [
-  { href: "/home", label: "Home", icon: Home, match: ["/home", "/month"] },
-  { href: "/movements", label: "Movements", icon: Wallet, match: ["/movements", "/transactions"] },
-  { href: "/control", label: "Control", icon: ClipboardCheck, match: ["/control"] },
-  { href: "/target", label: "Targets", icon: LineChart, match: ["/target", "/plan", "/budget"] },
-];
 
 export function AppSidebar() {
   const pathname = usePathname();
-
-  function isActive(match: string[]) {
-    return match.some((m) => pathname.startsWith(m));
-  }
 
   return (
     <aside className="hidden w-[232px] shrink-0 flex-col bg-white px-5 py-7 shadow-[1px_0_0_rgba(28,27,41,0.06)] md:flex">
@@ -29,8 +19,8 @@ export function AppSidebar() {
       </Link>
 
       <nav className="flex flex-col gap-1">
-        {mainNav.map((item) => {
-          const active = isActive(item.match);
+        {appNavItems.map((item) => {
+          const active = isNavActive(pathname, item.match);
           const Icon = item.icon;
           return (
             <Link

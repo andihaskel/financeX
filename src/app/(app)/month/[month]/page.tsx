@@ -128,7 +128,7 @@ export default async function MonthPage({
           How did {monthNameOnly} go?
         </p>
         <MissingImportBadge month={month} accounts={importCoverage.accounts} />
-        <div className="grid gap-3.5 sm:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-3.5">
           <Link
             href={buildMovementsHref({
               month,
@@ -176,7 +176,7 @@ export default async function MonthPage({
         }))}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
         <SurfaceCard>
           <p className="text-sm font-semibold text-[#6E6B82]">Your usual expenses</p>
           <p className="mt-1.5 text-[26px] font-extrabold">

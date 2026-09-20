@@ -25,7 +25,7 @@ export default async function TargetPage({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
         {[
           { label: "Expected income", value: formatMoney(summary.expectedIncome) },
           { label: "Target to spend", value: formatMoney(summary.targetToSpend) },
