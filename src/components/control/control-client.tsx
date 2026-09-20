@@ -494,7 +494,7 @@ function CommitmentRow({
     <div>
       <div
         className={cn(
-          "flex items-center gap-2.5 border-b border-[#F1EFF7] py-[7px]",
+          "flex min-w-[560px] items-center gap-2.5 border-b border-[#F1EFF7] py-[7px] md:min-w-0",
           !matchedLabel && "last:border-0"
         )}
       >
@@ -505,7 +505,7 @@ function CommitmentRow({
           onClick={matchedLabel ? onToggleExpand : undefined}
           disabled={!matchedLabel}
         >
-          <p className="truncate text-[13.5px] font-bold text-[#1C1B29]">
+          <p className="whitespace-nowrap text-[13.5px] font-bold text-[#1C1B29] md:truncate">
             {row.commitment.name}
             {row.occurrence.status === "reconciled" ? (
               <span className="ml-1.5 text-[11px] font-semibold text-[#0F9D58]">
@@ -544,8 +544,8 @@ function CommitmentRow({
         </div>
       </div>
       {expanded && matchedLabel && (
-        <div className="mb-2 rounded-[12px] bg-[#F9F8FC] px-3.5 py-2 text-xs font-bold text-[#4B4860]">
-          {matchedLabel}
+        <div className="mb-2 min-w-[560px] rounded-[12px] bg-[#F9F8FC] px-3.5 py-2 text-xs font-bold text-[#4B4860] md:min-w-0">
+          <p className="whitespace-nowrap md:whitespace-normal">{matchedLabel}</p>
         </div>
       )}
 
@@ -785,41 +785,45 @@ function CommitmentSection({
   onToggleExpand: (occurrenceId: string) => void;
 }) {
   return (
-    <SurfaceCard className="!px-5 !py-1">
-      <div className="flex items-baseline justify-between border-b border-[#F1EFF7] py-[9px]">
+    <SurfaceCard className="!overflow-hidden !px-0 !py-1">
+      <div className="flex items-baseline justify-between border-b border-[#F1EFF7] px-5 py-[9px]">
         <p className="text-[13px] font-extrabold text-[#1C1B29]">{title}</p>
         <p className="text-xs font-bold text-[#1C1B29]">{subtitle}</p>
       </div>
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-sm font-semibold text-[#1C1B29]">
+        <p className="px-5 py-6 text-center text-sm font-semibold text-[#1C1B29]">
           Nothing here.
         </p>
       ) : (
-        rows.map((row) => {
-          const tx = row.occurrence.reconciled_transaction_id
-            ? txById.get(row.occurrence.reconciled_transaction_id)
-            : null;
-          const matchedLabel = tx
-            ? `${format(parseISO(tx.transaction_date), "MMM d")} · ${tx.description} · ${formatControlAmount(
-                Math.abs(tx.amount),
-                tx.currency,
-                "fixed"
-              )}`
-            : null;
-          return (
-            <CommitmentRow
-              key={row.occurrence.id}
-              row={row}
-              year={year}
-              month={month}
-              monthKey={monthKey}
-              matchedLabel={matchedLabel}
-              expanded={expandedId === row.occurrence.id}
-              onToggleExpand={() => onToggleExpand(row.occurrence.id)}
-              monthTransactions={monthTransactions}
-            />
-          );
-        })
+        <div className="overflow-x-auto overscroll-x-contain md:overflow-visible [-webkit-overflow-scrolling:touch]">
+          <div className="px-5">
+            {rows.map((row) => {
+              const tx = row.occurrence.reconciled_transaction_id
+                ? txById.get(row.occurrence.reconciled_transaction_id)
+                : null;
+              const matchedLabel = tx
+                ? `${format(parseISO(tx.transaction_date), "MMM d")} · ${tx.description} · ${formatControlAmount(
+                    Math.abs(tx.amount),
+                    tx.currency,
+                    "fixed"
+                  )}`
+                : null;
+              return (
+                <CommitmentRow
+                  key={row.occurrence.id}
+                  row={row}
+                  year={year}
+                  month={month}
+                  monthKey={monthKey}
+                  matchedLabel={matchedLabel}
+                  expanded={expandedId === row.occurrence.id}
+                  onToggleExpand={() => onToggleExpand(row.occurrence.id)}
+                  monthTransactions={monthTransactions}
+                />
+              );
+            })}
+          </div>
+        </div>
       )}
     </SurfaceCard>
   );
