@@ -10,6 +10,17 @@ import {
 } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
 
+/** Home centered on mobile: Control ↔ Home swap vs sidebar order. */
+const mobileNavItems = (() => {
+  const items = [...appNavItems];
+  const homeIdx = items.findIndex((item) => item.href === "/home");
+  const controlIdx = items.findIndex((item) => item.href === "/control");
+  if (homeIdx >= 0 && controlIdx >= 0) {
+    [items[homeIdx], items[controlIdx]] = [items[controlIdx], items[homeIdx]];
+  }
+  return items;
+})();
+
 export function AppBottomNav() {
   const pathname = usePathname();
   const settingsActive = isNavActive(pathname, settingsNavItem.match);
@@ -17,7 +28,7 @@ export function AppBottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around bg-white px-1 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-2px_12px_rgba(28,27,41,0.08)] md:hidden">
-      {appNavItems.map((item) => {
+      {mobileNavItems.map((item) => {
         const active = isNavActive(pathname, item.match);
         const Icon = item.icon;
         return (

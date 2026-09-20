@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { signOut } from "@/app/actions/auth";
 import { RulesTable } from "@/components/rules/rules-table";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { SurfaceCard } from "@/components/ui/surface";
@@ -126,6 +127,28 @@ export default async function SettingsPage({
               <span className="ml-auto text-[#D8D4E8]">→</span>
             </Link>
           ))}
+        </SurfaceCard>
+
+        <SurfaceCard className="px-6 py-1">
+          <Link
+            href="/apps"
+            className="flex items-center gap-2 border-b border-[#F1EFF7] py-4"
+          >
+            <span className="text-sm font-bold">Go to Your space</span>
+            <span className="text-[13px] font-semibold text-[#6E6B82]">
+              Switch apps
+            </span>
+            <span className="ml-auto text-[#D8D4E8]">→</span>
+          </Link>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2 py-4 text-left"
+            >
+              <span className="text-sm font-bold text-[#B91C1C]">Sign out</span>
+              <span className="ml-auto text-[#D8D4E8]">→</span>
+            </button>
+          </form>
         </SurfaceCard>
       </div>
     );

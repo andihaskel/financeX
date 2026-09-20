@@ -74,27 +74,31 @@ export function MovementsFilters({
           ‹ {returnLabel}
         </Link>
       )}
-      <div className="flex items-center gap-2.5">
-        <h1 className="mr-auto text-[26px] font-extrabold">Movements</h1>
-        {viewingYear ? (
-          <span className="text-[15px] font-bold text-[#6E6B82]">{year}</span>
-        ) : (
-          <MonthTitlePicker
-            month={month}
-            navigateTo={(m) => {
-              const params = new URLSearchParams(
-                typeof window !== "undefined" ? window.location.search : searchParams.toString()
-              );
-              params.set("month", m);
-              params.delete("year");
-              params.delete("show");
-              params.delete("page");
-              params.delete("limit");
-              return `/movements?${params.toString()}`;
-            }}
-          />
-        )}
-        <AddMovementsButton month={viewingYear ? undefined : month} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
+        <h1 className="text-[26px] font-extrabold sm:mr-auto">Movements</h1>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {viewingYear ? (
+            <span className="text-[15px] font-bold text-[#6E6B82]">{year}</span>
+          ) : (
+            <MonthTitlePicker
+              month={month}
+              navigateTo={(m) => {
+                const params = new URLSearchParams(
+                  typeof window !== "undefined"
+                    ? window.location.search
+                    : searchParams.toString()
+                );
+                params.set("month", m);
+                params.delete("year");
+                params.delete("show");
+                params.delete("page");
+                params.delete("limit");
+                return `/movements?${params.toString()}`;
+              }}
+            />
+          )}
+          <AddMovementsButton month={viewingYear ? undefined : month} />
+        </div>
       </div>
 
       <input

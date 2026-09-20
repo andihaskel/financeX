@@ -25,7 +25,7 @@ export default async function TargetPage({
         </p>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {[
           { label: "Expected income", value: formatMoney(summary.expectedIncome) },
           { label: "Target to spend", value: formatMoney(summary.targetToSpend) },
@@ -35,7 +35,10 @@ export default async function TargetPage({
             accent: true,
           },
         ].map((card) => (
-          <SurfaceCard key={card.label} className="px-6 py-5">
+          <SurfaceCard
+            key={card.label}
+            className="px-6 py-5 last:col-span-2 md:last:col-span-1"
+          >
             <p className="text-[13px] font-semibold text-[#6E6B82]">{card.label}</p>
             <p
               className={`mt-2 text-[22px] font-extrabold ${

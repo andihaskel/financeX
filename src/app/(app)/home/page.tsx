@@ -44,17 +44,39 @@ export default async function HomePage({
         </div>
         <p className="mb-5 text-[15px] font-semibold opacity-85">How is {year} going?</p>
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-          {[
-            ["Income", formatMoney(summary.totalIncome)],
-            ["Spent", formatMoney(summary.totalSpent)],
-            ["Saved", formatMoney(summary.totalSaved)],
-            ["Savings rate", formatPercent(summary.savingsRate)],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-[18px] bg-white/15 px-4 py-4">
-              <p className="text-[13px] opacity-80">{label}</p>
-              <p className="mt-1.5 text-[22px] font-extrabold">{value}</p>
+          <div className="rounded-[18px] bg-white/15 px-4 py-4">
+            <p className="text-[13px] opacity-80">Income</p>
+            <p className="mt-1.5 text-[22px] font-extrabold">
+              {formatMoney(summary.totalIncome)}
+            </p>
+          </div>
+          <div className="rounded-[18px] bg-white/15 px-4 py-4">
+            <p className="text-[13px] opacity-80">Spent</p>
+            <p className="mt-1.5 text-[22px] font-extrabold">
+              {formatMoney(summary.totalSpent)}
+            </p>
+          </div>
+          <div className="col-span-2 rounded-[18px] bg-white/15 px-4 py-4 md:hidden">
+            <div className="mb-1.5 flex items-start justify-between gap-2">
+              <p className="text-[13px] opacity-80">Saved</p>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#5F3DC4]">
+                {formatPercent(summary.savingsRate)}
+              </span>
             </div>
-          ))}
+            <p className="text-[22px] font-extrabold">{formatMoney(summary.totalSaved)}</p>
+          </div>
+          <div className="hidden rounded-[18px] bg-white/15 px-4 py-4 md:block">
+            <p className="text-[13px] opacity-80">Saved</p>
+            <p className="mt-1.5 text-[22px] font-extrabold">
+              {formatMoney(summary.totalSaved)}
+            </p>
+          </div>
+          <div className="hidden rounded-[18px] bg-white/15 px-4 py-4 md:block">
+            <p className="text-[13px] opacity-80">Savings rate</p>
+            <p className="mt-1.5 text-[22px] font-extrabold">
+              {formatPercent(summary.savingsRate)}
+            </p>
+          </div>
         </div>
       </GradientHero>
 

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
 
-import { signOut } from "@/app/actions/auth";
 import { appNavItems, isNavActive } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
 
@@ -56,14 +55,6 @@ export function AppSidebar() {
           <Settings className="h-5 w-5" />
           Settings
         </Link>
-        <form action={signOut} className="mt-2 px-2">
-          <button
-            type="submit"
-            className="text-sm font-medium text-[#9E9AB0] hover:text-[#6E6B82]"
-          >
-            Sign out
-          </button>
-        </form>
       </div>
     </aside>
   );
