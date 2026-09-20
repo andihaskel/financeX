@@ -1,5 +1,11 @@
+import {
+  daysUntilDueInMonth,
+  formatDaysUntilDueLabel,
+  getZonedYmd,
+  isDueWithinDays,
+  monthsToScanForDueWindow,
+} from "@/lib/control/due-today";
 import { displayAmountForOccurrence } from "@/lib/control/logic";
-import { getZonedYmd, isDueOnCalendarDay } from "@/lib/control/due-today";
 import {
   formatDueItemAmount,
   sendDueCommitmentsEmail,
@@ -9,6 +15,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Commitment, CommitmentOccurrence, Currency } from "@/types/database";
 
 type OccurrenceWithCommitment = CommitmentOccurrence & {
+  year: number;
+  month: number;
   commitments: Commitment | Commitment[] | null;
 };
 
@@ -22,68 +30,102 @@ function unwrapCommitment(
 export async function runDueCommitmentsDigest(now: Date = new Date()) {
   const { year, month, day, dateLabel } = getZonedYmd("America/Montevideo", now);
   const admin = createAdminClient();
-
-  const { data, error } = await admin
-    .from("commitment_occurrences")
-    .select(
-      `
-      id,
-      user_id,
-      status,
-      expected_amount,
-      actual_amount,
-      commitments!inner (
-        id,
-        name,
-        direction,
-        amount,
-        currency,
-        amount_type,
-        due_day,
-        due_month,
-        recurrence_type,
-        active
-      )
-    `
-    )
-    .eq("year", year)
-    .eq("month", month)
-    .eq("status", "pending")
-    .eq("commitments.active", true);
-
-  if (error) {
-    throw new Error(`Failed to load occurrences: ${error.message}`);
-  }
+  const months = monthsToScanForDueWindow(year, month, day);
 
   const dueByUser = new Map<string, DueCommitmentEmailItem[]>();
 
-  for (const row of (data ?? []) as OccurrenceWithCommitment[]) {
-    const commitment = unwrapCommitment(row.commitments);
-    if (!commitment) continue;
-    if (!isDueOnCalendarDay(commitment.due_day, year, month, day)) continue;
+  for (const period of months) {
+    const { data, error } = await admin
+      .from("commitment_occurrences")
+      .select(
+        `
+        id,
+        user_id,
+        year,
+        month,
+        status,
+        expected_amount,
+        actual_amount,
+        commitments!inner (
+          id,
+          name,
+          direction,
+          amount,
+          currency,
+          amount_type,
+          due_day,
+          due_month,
+          recurrence_type,
+          active
+        )
+      `
+      )
+      .eq("year", period.year)
+      .eq("month", period.month)
+      .eq("status", "pending")
+      .eq("commitments.active", true);
 
-    if (
-      commitment.recurrence_type === "annual" &&
-      commitment.due_month != null &&
-      commitment.due_month !== month
-    ) {
-      continue;
+    if (error) {
+      throw new Error(`Failed to load occurrences: ${error.message}`);
     }
 
-    const amount = displayAmountForOccurrence(commitment, row);
-    const item: DueCommitmentEmailItem = {
-      name: commitment.name,
-      direction: commitment.direction,
-      amountLabel: formatDueItemAmount({
-        amount,
-        currency: commitment.currency as Currency,
-        amountType: commitment.amount_type,
-      }),
-    };
+    for (const row of (data ?? []) as OccurrenceWithCommitment[]) {
+      const commitment = unwrapCommitment(row.commitments);
+      if (!commitment) continue;
 
-    const list = dueByUser.get(row.user_id) ?? [];
-    list.push(item);
-    dueByUser.set(row.user_id, list);
+      if (
+        !isDueWithinDays(
+          commitment.due_day,
+          row.year,
+          row.month,
+          year,
+          month,
+          day
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        commitment.recurrence_type === "annual" &&
+        commitment.due_month != null &&
+        commitment.due_month !== row.month
+      ) {
+        continue;
+      }
+
+      const daysUntil = daysUntilDueInMonth(
+        commitment.due_day,
+        row.year,
+        row.month,
+        year,
+        month,
+        day
+      );
+      if (daysUntil == null || commitment.due_day == null) continue;
+
+      const amount = displayAmountForOccurrence(commitment, row);
+      const item: DueCommitmentEmailItem = {
+        name: commitment.name,
+        direction: commitment.direction,
+        amountLabel: formatDueItemAmount({
+          amount,
+          currency: commitment.currency as Currency,
+          amountType: commitment.amount_type,
+        }),
+        daysUntil,
+        dueLabel: formatDaysUntilDueLabel(
+          daysUntil,
+          row.year,
+          row.month,
+          commitment.due_day
+        ),
+      };
+
+      const list = dueByUser.get(row.user_id) ?? [];
+      list.push(item);
+      dueByUser.set(row.user_id, list);
+    }
   }
 
   const origin =
@@ -100,6 +142,8 @@ export async function runDueCommitmentsDigest(now: Date = new Date()) {
   }[] = [];
 
   for (const [userId, items] of dueByUser) {
+    items.sort((a, b) => a.daysUntil - b.daysUntil || a.name.localeCompare(b.name));
+
     const { data: userData, error: userError } =
       await admin.auth.admin.getUserById(userId);
 

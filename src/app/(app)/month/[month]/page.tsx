@@ -128,7 +128,7 @@ export default async function MonthPage({
           How did {monthNameOnly} go?
         </p>
         <MissingImportBadge month={month} accounts={importCoverage.accounts} />
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-3.5">
+        <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
           <Link
             href={buildMovementsHref({
               month,
@@ -151,7 +151,7 @@ export default async function MonthPage({
             <p className="text-[13px] opacity-80">Spent</p>
             <p className="mt-1.5 text-2xl font-extrabold">{formatMoney(metrics.totalSpending)}</p>
           </Link>
-          <div className="rounded-[18px] bg-white/15 px-4 py-4">
+          <div className="col-span-2 rounded-[18px] bg-white/15 px-4 py-4 md:col-span-1">
             <div className="mb-1.5 flex items-start justify-between">
               <p className="text-[13px] opacity-80">Saved</p>
               <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#5F3DC4]">

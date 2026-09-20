@@ -4,16 +4,7 @@ import Link from "next/link";
 import { addMonths, format, parseISO, subMonths } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -232,69 +223,6 @@ function CommitmentFormFields({
   );
 }
 
-const NameColumnScrollContext = createContext<{
-  register: (el: HTMLElement) => () => void;
-  syncFrom: (source: HTMLElement) => void;
-} | null>(null);
-
-function NameColumnScrollProvider({ children }: { children: ReactNode }) {
-  const elementsRef = useRef(new Set<HTMLElement>());
-  const syncingRef = useRef(false);
-
-  const register = useCallback((el: HTMLElement) => {
-    elementsRef.current.add(el);
-    return () => {
-      elementsRef.current.delete(el);
-    };
-  }, []);
-
-  const syncFrom = useCallback((source: HTMLElement) => {
-    if (syncingRef.current) return;
-    syncingRef.current = true;
-    const left = source.scrollLeft;
-    for (const el of elementsRef.current) {
-      if (el !== source && el.scrollLeft !== left) {
-        el.scrollLeft = left;
-      }
-    }
-    syncingRef.current = false;
-  }, []);
-
-  return (
-    <NameColumnScrollContext.Provider value={{ register, syncFrom }}>
-      {children}
-    </NameColumnScrollContext.Provider>
-  );
-}
-
-function useSyncedHorizontalScroll<T extends HTMLElement>() {
-  const ctx = useContext(NameColumnScrollContext);
-  const elRef = useRef<T | null>(null);
-  const unregisterRef = useRef<(() => void) | null>(null);
-
-  const setRef = useCallback(
-    (el: T | null) => {
-      unregisterRef.current?.();
-      unregisterRef.current = null;
-      elRef.current = el;
-      if (el && ctx) {
-        unregisterRef.current = ctx.register(el);
-      }
-    },
-    [ctx]
-  );
-
-  useEffect(() => () => unregisterRef.current?.(), []);
-
-  const onScroll = useCallback(() => {
-    const el = elRef.current;
-    if (!ctx || !el) return;
-    ctx.syncFrom(el);
-  }, [ctx]);
-
-  return { ref: setRef, onScroll: ctx ? onScroll : undefined };
-}
-
 function StatusDot({
   visual,
   onClick,
@@ -349,7 +277,6 @@ function CommitmentRow({
   expanded,
   onToggleExpand,
   monthTransactions,
-  nameColMinCh,
 }: {
   row: ControlRow;
   year: number;
@@ -359,7 +286,6 @@ function CommitmentRow({
   expanded: boolean;
   onToggleExpand: () => void;
   monthTransactions: Transaction[];
-  nameColMinCh: number;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -410,9 +336,6 @@ function CommitmentRow({
   const linkedTx = row.occurrence.reconciled_transaction_id
     ? monthTransactions.find((tx) => tx.id === row.occurrence.reconciled_transaction_id)
     : null;
-
-  const nameScroll = useSyncedHorizontalScroll<HTMLDivElement>();
-  const matchedScroll = useSyncedHorizontalScroll<HTMLDivElement>();
 
   const filteredMovements = (() => {
     const q = movementQuery.trim().toLowerCase();
@@ -571,25 +494,18 @@ function CommitmentRow({
     <div>
       <div
         className={cn(
-          "flex items-center gap-2.5 border-b border-[#F1EFF7] py-[7px]",
+          "flex items-center gap-1.5 border-b border-[#F1EFF7] py-[7px] md:gap-2.5",
           !matchedLabel && "last:border-0"
         )}
       >
-        <div
-          ref={nameScroll.ref}
-          onScroll={nameScroll.onScroll}
-          className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden md:overflow-hidden md:[touch-action:auto]"
-        >
-          <div
-            className="flex items-center gap-2.5 md:min-w-0 md:w-full"
-            style={{ minWidth: `max(100%, calc(${nameColMinCh}ch + 2rem))` }}
-          >
+        <div className="min-w-0 flex-[1.6] overflow-x-auto overflow-y-hidden [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden md:flex-1 md:overflow-hidden md:[touch-action:auto]">
+          <div className="flex w-max items-center gap-2.5 md:w-full md:min-w-0">
             <div className="sticky left-0 z-10 shrink-0 bg-white pr-0.5">
               <StatusDot visual={visual} onClick={handleToggle} disabled={isPending} />
             </div>
             <button
               type="button"
-              className="min-w-0 flex-1 text-left md:overflow-hidden"
+              className="min-w-0 text-left md:flex-1 md:overflow-hidden"
               onClick={matchedLabel ? onToggleExpand : undefined}
               disabled={!matchedLabel}
             >
@@ -604,12 +520,12 @@ function CommitmentRow({
             </button>
           </div>
         </div>
-        <p className="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#1C1B29]">
+        <p className="shrink-0 whitespace-nowrap text-[12px] font-bold text-[#1C1B29] md:text-[13px]">
           {amountLabel}
         </p>
         <p
           className={cn(
-            "w-[72px] shrink-0 whitespace-nowrap text-right text-[13px] font-bold",
+            "w-12 shrink-0 whitespace-nowrap text-right text-[12px] font-bold md:w-[72px] md:text-[13px]",
             dueColor
           )}
         >
@@ -634,15 +550,8 @@ function CommitmentRow({
         </div>
       </div>
       {expanded && matchedLabel && (
-        <div
-          ref={matchedScroll.ref}
-          onScroll={matchedScroll.onScroll}
-          className="mb-2 overflow-x-auto overflow-y-hidden rounded-[12px] bg-[#F9F8FC] py-2 pl-[2.125rem] pr-3.5 text-xs font-bold text-[#4B4860] [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden md:[touch-action:auto]"
-        >
-          <p
-            className="whitespace-nowrap md:!min-w-0 md:whitespace-normal"
-            style={{ minWidth: `${nameColMinCh}ch` }}
-          >
+        <div className="mb-2 overflow-x-auto overflow-y-hidden rounded-[12px] bg-[#F9F8FC] py-2 pl-[2.125rem] pr-3.5 text-xs font-bold text-[#4B4860] [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden md:[touch-action:auto]">
+          <p className="w-max whitespace-nowrap md:w-auto md:whitespace-normal">
             {matchedLabel}
           </p>
         </div>
@@ -894,56 +803,31 @@ function CommitmentSection({
           Nothing here.
         </p>
       ) : (
-        <NameColumnScrollProvider>
-          {(() => {
-            const nameColMinCh = Math.max(
-              16,
-              ...rows.map((row) => {
-                let len = row.commitment.name.length;
-                if (row.occurrence.status === "reconciled") len += 12;
-                const tx = row.occurrence.reconciled_transaction_id
-                  ? txById.get(row.occurrence.reconciled_transaction_id)
-                  : null;
-                if (tx) {
-                  const matched = `${format(parseISO(tx.transaction_date), "MMM d")} · ${tx.description} · ${formatControlAmount(
-                    Math.abs(tx.amount),
-                    tx.currency,
-                    "fixed"
-                  )}`;
-                  len = Math.max(len, matched.length);
-                }
-                return len;
-              })
-            );
-
-            return rows.map((row) => {
-              const tx = row.occurrence.reconciled_transaction_id
-                ? txById.get(row.occurrence.reconciled_transaction_id)
-                : null;
-              const matchedLabel = tx
-                ? `${format(parseISO(tx.transaction_date), "MMM d")} · ${tx.description} · ${formatControlAmount(
-                    Math.abs(tx.amount),
-                    tx.currency,
-                    "fixed"
-                  )}`
-                : null;
-              return (
-                <CommitmentRow
-                  key={row.occurrence.id}
-                  row={row}
-                  year={year}
-                  month={month}
-                  monthKey={monthKey}
-                  matchedLabel={matchedLabel}
-                  expanded={expandedId === row.occurrence.id}
-                  onToggleExpand={() => onToggleExpand(row.occurrence.id)}
-                  monthTransactions={monthTransactions}
-                  nameColMinCh={nameColMinCh}
-                />
-              );
-            });
-          })()}
-        </NameColumnScrollProvider>
+        rows.map((row) => {
+          const tx = row.occurrence.reconciled_transaction_id
+            ? txById.get(row.occurrence.reconciled_transaction_id)
+            : null;
+          const matchedLabel = tx
+            ? `${format(parseISO(tx.transaction_date), "MMM d")} · ${tx.description} · ${formatControlAmount(
+                Math.abs(tx.amount),
+                tx.currency,
+                "fixed"
+              )}`
+            : null;
+          return (
+            <CommitmentRow
+              key={row.occurrence.id}
+              row={row}
+              year={year}
+              month={month}
+              monthKey={monthKey}
+              matchedLabel={matchedLabel}
+              expanded={expandedId === row.occurrence.id}
+              onToggleExpand={() => onToggleExpand(row.occurrence.id)}
+              monthTransactions={monthTransactions}
+            />
+          );
+        })
       )}
     </SurfaceCard>
   );

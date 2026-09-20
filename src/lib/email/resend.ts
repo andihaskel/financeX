@@ -5,6 +5,8 @@ export type DueCommitmentEmailItem = {
   name: string;
   direction: "pay" | "receive";
   amountLabel: string;
+  dueLabel: string;
+  daysUntil: number;
 };
 
 export async function sendDueCommitmentsEmail(input: {
@@ -24,20 +26,23 @@ export async function sendDueCommitmentsEmail(input: {
     return { ok: true };
   }
 
+  const hasToday = input.items.some((item) => item.daysUntil === 0);
+  const subject =
+    input.items.length === 1
+      ? `${input.items[0].dueLabel}: ${input.items[0].name}`
+      : hasToday
+        ? `${input.items.length} commitments due soon`
+        : `${input.items.length} commitments coming up`;
+
   const lines = input.items
     .map((item) => {
       const verb = item.direction === "pay" ? "Pay" : "Receive";
-      return `• ${verb}: ${item.name} — ${item.amountLabel}`;
+      return `• ${verb}: ${item.name} — ${item.amountLabel} (${item.dueLabel})`;
     })
     .join("\n");
 
-  const subject =
-    input.items.length === 1
-      ? `Due today: ${input.items[0].name}`
-      : `${input.items.length} commitments due today`;
-
   const text = [
-    `Good morning — these commitments are due today (${input.dateLabel}):`,
+    `Good morning — these commitments are due within the next 3 days (${input.dateLabel}):`,
     "",
     lines,
     "",
@@ -49,13 +54,13 @@ export async function sendDueCommitmentsEmail(input: {
   const htmlItems = input.items
     .map((item) => {
       const verb = item.direction === "pay" ? "Pay" : "Receive";
-      return `<li><strong>${verb}</strong>: ${escapeHtml(item.name)} — ${escapeHtml(item.amountLabel)}</li>`;
+      return `<li><strong>${verb}</strong>: ${escapeHtml(item.name)} — ${escapeHtml(item.amountLabel)} <span style="color:#6E6B82">(${escapeHtml(item.dueLabel)})</span></li>`;
     })
     .join("");
 
   const html = `
     <div style="font-family:Manrope,Helvetica,Arial,sans-serif;color:#1C1B29;line-height:1.5">
-      <p>Good morning — these commitments are due today (<strong>${escapeHtml(input.dateLabel)}</strong>):</p>
+      <p>Good morning — these commitments are due within the next 3 days (<strong>${escapeHtml(input.dateLabel)}</strong>):</p>
       <ul>${htmlItems}</ul>
       <p><a href="${escapeHtml(input.controlUrl)}" style="color:#6C3FD1;font-weight:700">Open Control →</a></p>
       <p style="color:#6E6B82;font-size:13px">— financeX</p>
