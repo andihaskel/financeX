@@ -3,6 +3,7 @@ import { format, parseISO } from "date-fns";
 import { notFound } from "next/navigation";
 
 import { OpenImportButton } from "@/components/home/open-import-button";
+import { AddMovementsButton } from "@/components/layout/floating-add-button";
 import { MonthDataPanel } from "@/components/month/month-data-panel";
 import { MonthEmptyHeader, MonthPageHeader } from "@/components/month/month-page-header";
 import { MissingImportBadge } from "@/components/accounts/missing-import-badge";
@@ -85,11 +86,14 @@ export default async function MonthPage({
   if (transactions.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="text-sm font-bold text-[#6E6B82]">
-          <Link href="/home" className="hover:text-[#6C3FD1]">
-            {month.slice(0, 4)}
-          </Link>{" "}
-          › {monthNameOnly}
+        <div className="flex items-center gap-3">
+          <div className="mr-auto text-sm font-bold text-[#6E6B82]">
+            <Link href="/home" className="hover:text-[#6C3FD1]">
+              {month.slice(0, 4)}
+            </Link>{" "}
+            › {monthNameOnly}
+          </div>
+          <AddMovementsButton month={month} />
         </div>
         <SurfaceCard className="px-10 py-14 text-center">
           <MonthEmptyHeader month={month} />
@@ -115,11 +119,14 @@ export default async function MonthPage({
 
   return (
     <div className="space-y-7">
-      <div className="text-sm font-bold text-[#6E6B82]">
-        <Link href="/home" className="hover:text-[#6C3FD1]">
-          {month.slice(0, 4)}
-        </Link>{" "}
-        › {monthNameOnly}
+      <div className="flex items-center gap-3">
+        <div className="mr-auto text-sm font-bold text-[#6E6B82]">
+          <Link href="/home" className="hover:text-[#6C3FD1]">
+            {month.slice(0, 4)}
+          </Link>{" "}
+          › {monthNameOnly}
+        </div>
+        <AddMovementsButton month={month} />
       </div>
 
       <GradientHero>
