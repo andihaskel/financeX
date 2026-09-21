@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import {
-  formatMonthLabel,
   MonthPickerModal,
 } from "@/components/shared/month-picker-modal";
+import { formatMonthLabel } from "@/lib/dates/month";
 
 export function MonthTitlePicker({
   month,

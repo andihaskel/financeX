@@ -14,12 +14,9 @@ import {
 } from "@/app/actions/import";
 import { createManualTransaction } from "@/app/actions/transactions";
 import { useImportDialog } from "@/components/import/import-dialog-store";
-import {
-  formatMonthLabel,
-  formatMonthNameOnly,
-  MonthPickerModal,
-} from "@/components/shared/month-picker-modal";
+import { MonthPickerModal } from "@/components/shared/month-picker-modal";
 import { PrimaryButton } from "@/components/ui/surface";
+import { formatMonthLabel, formatMonthNameOnly } from "@/lib/dates/month";
 import {
   accountsForImportSelection,
   defaultAccountForPreview,

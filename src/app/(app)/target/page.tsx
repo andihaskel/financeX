@@ -1,4 +1,4 @@
-import { formatMonthLabel } from "@/components/shared/month-picker-modal";
+import { formatMonthLabel } from "@/lib/dates/month";
 import { TargetBudgetForm } from "@/components/target/target-budget-form";
 import { TargetMonthPicker } from "@/components/target/target-month-picker";
 import { TargetPlanSummary } from "@/components/target/target-plan-summary";
