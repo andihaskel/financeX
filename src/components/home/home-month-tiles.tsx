@@ -52,8 +52,8 @@ function MonthTile({
       </p>
       {month.hasData ? (
         <>
-          <p className="mt-2 text-[15px] font-extrabold">Saved {formatMoney(month.saved)}</p>
-          <p className="mt-1 text-xs font-bold text-[#6C3FD1]">
+          <p className="mt-2 text-[15px] font-extrabold tabular-nums">Saved {formatMoney(month.saved)}</p>
+          <p className="mt-1 text-xs font-bold text-[#6C3FD1] tabular-nums">
             {formatPercent(month.savingsRate)}
           </p>
           <ImportCoverageCompact accounts={coverage} />

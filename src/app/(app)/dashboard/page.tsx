@@ -12,6 +12,7 @@ import {
 } from "@/components/charts/dashboard-charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/currency/convert";
+import { cn } from "@/lib/utils";
 import {
   getBudgetComparison,
   getDashboardMetrics,
@@ -129,16 +130,16 @@ export default async function DashboardPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Targets ({formatPercent(metrics.savingsTarget)})</span>
-              <span className="font-medium">{formatCurrency(targetSavings)}</span>
+              <span className="text-muted-foreground tabular-nums">Targets ({formatPercent(metrics.savingsTarget)})</span>
+              <span className="font-medium tabular-nums">{formatCurrency(targetSavings)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Actual savings</span>
-              <span className="font-medium">{formatCurrency(metrics.savings)}</span>
+              <span className="font-medium tabular-nums">{formatCurrency(metrics.savings)}</span>
             </div>
             <div className="flex justify-between border-t pt-3 text-sm">
               <span className="text-muted-foreground">Difference</span>
-              <span className={savingsDiff >= 0 ? "font-medium text-emerald-600" : "font-medium text-rose-600"}>
+              <span className={cn(savingsDiff >= 0 ? "font-medium text-emerald-600" : "font-medium text-rose-600", "tabular-nums")}>
                 {formatCurrency(savingsDiff)}
               </span>
             </div>

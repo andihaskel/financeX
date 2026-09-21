@@ -91,7 +91,7 @@ function StatPill({
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold text-white">
       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: dotColor }} />
-      {value} {label}
+      <span className="tabular-nums">{value}</span> {label}
     </span>
   );
 }

@@ -10,6 +10,7 @@ import {
 
 import type { DonutSlice } from "@/lib/spending/donut-slices";
 import { formatMoney } from "@/lib/design/format";
+import { useIncognito } from "@/lib/privacy/incognito-context";
 
 export function SpendingDonutChart({
   slices,
@@ -20,6 +21,7 @@ export function SpendingDonutChart({
 }) {
   const data = slices.filter((slice) => slice.value > 0);
   const total = data.reduce((sum, slice) => sum + slice.value, 0);
+  const { incognito } = useIncognito();
 
   if (total <= 0) return null;
 
@@ -44,6 +46,7 @@ export function SpendingDonutChart({
           </Pie>
           <Tooltip
             formatter={(value) => formatMoney(Number(value))}
+            itemStyle={incognito ? { filter: "blur(7px)", userSelect: "none" } : undefined}
             contentStyle={{
               borderRadius: 12,
               border: "none",

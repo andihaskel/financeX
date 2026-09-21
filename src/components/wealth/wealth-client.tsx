@@ -88,7 +88,7 @@ export function WealthClient({
                     <p className="text-sm font-extrabold tabular-nums">
                       {formatMoney(position.amountUsd)}
                     </p>
-                    <p className="text-[11px] font-semibold text-[#9E9AB0]">
+                    <p className="text-[11px] font-semibold text-[#9E9AB0] tabular-nums">
                       {position.currency} {Math.round(position.amount).toLocaleString("en-US")}
                     </p>
                   </div>

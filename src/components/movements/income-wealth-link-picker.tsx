@@ -97,7 +97,7 @@ export function IncomeWealthLinkPicker({
               placeholder="0"
               className="rounded-[12px] border-[#E2DEF0] bg-white"
             />
-            <p className="text-xs font-semibold text-[#6E6B82]">
+            <p className="text-xs font-semibold text-[#6E6B82] tabular-nums">
               Payment total: {formatTransactionAmount(paymentAmount, paymentCurrency)}
             </p>
           </div>

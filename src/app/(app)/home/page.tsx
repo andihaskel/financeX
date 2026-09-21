@@ -49,34 +49,34 @@ export default async function HomePage({
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
           <div className="rounded-[18px] bg-white/15 px-4 py-4">
             <p className="text-[13px] opacity-80">Income</p>
-            <p className="mt-1.5 text-[22px] font-extrabold">
+            <p className="mt-1.5 text-[22px] font-extrabold tabular-nums">
               {formatMoney(summary.totalIncome)}
             </p>
           </div>
           <div className="rounded-[18px] bg-white/15 px-4 py-4">
             <p className="text-[13px] opacity-80">Spent</p>
-            <p className="mt-1.5 text-[22px] font-extrabold">
+            <p className="mt-1.5 text-[22px] font-extrabold tabular-nums">
               {formatMoney(summary.totalSpent)}
             </p>
           </div>
           <div className="col-span-2 rounded-[18px] bg-white/15 px-4 py-4 md:hidden">
             <div className="mb-1.5 flex items-start justify-between gap-2">
               <p className="text-[13px] opacity-80">Saved</p>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#5F3DC4]">
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#5F3DC4] tabular-nums">
                 {formatPercent(summary.savingsRate)}
               </span>
             </div>
-            <p className="text-[22px] font-extrabold">{formatMoney(summary.totalSaved)}</p>
+            <p className="text-[22px] font-extrabold tabular-nums">{formatMoney(summary.totalSaved)}</p>
           </div>
           <div className="hidden rounded-[18px] bg-white/15 px-4 py-4 md:block">
             <p className="text-[13px] opacity-80">Saved</p>
-            <p className="mt-1.5 text-[22px] font-extrabold">
+            <p className="mt-1.5 text-[22px] font-extrabold tabular-nums">
               {formatMoney(summary.totalSaved)}
             </p>
           </div>
           <div className="hidden rounded-[18px] bg-white/15 px-4 py-4 md:block">
             <p className="text-[13px] opacity-80">Savings rate</p>
-            <p className="mt-1.5 text-[22px] font-extrabold">
+            <p className="mt-1.5 text-[22px] font-extrabold tabular-nums">
               {formatPercent(summary.savingsRate)}
             </p>
           </div>
@@ -106,7 +106,13 @@ export default async function HomePage({
         ].map(([label, value]) => (
           <SurfaceCard key={label} className="p-[18px]">
             <p className="text-xs font-semibold text-[#6E6B82]">{label}</p>
-            <p className="mt-1.5 text-lg font-extrabold">{value}</p>
+            <p
+              className={`mt-1.5 text-lg font-extrabold ${
+                label === "Most expensive category" ? "" : "tabular-nums"
+              }`}
+            >
+              {value}
+            </p>
           </SurfaceCard>
         ))}
       </div>

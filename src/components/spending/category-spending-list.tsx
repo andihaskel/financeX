@@ -132,7 +132,7 @@ export function BudgetCategoryList({
             <div className="mb-2 flex items-center gap-3.5">
               <CategoryChip emoji={visual.emoji} color={visual.chipColor} />
               <span className="flex-1 text-sm font-semibold">{row.name}</span>
-              <span className="text-sm font-semibold text-[#6E6B82]">
+              <span className="text-sm font-semibold text-[#6E6B82] tabular-nums">
                 {hasBudget
                   ? `${formatMoney(row.actual)} of ${formatMoney(row.budget)}`
                   : formatMoney(row.actual)}
@@ -149,7 +149,7 @@ export function BudgetCategoryList({
                 />
               </div>
               <span
-                className={`w-24 shrink-0 text-right text-[13px] font-bold ${over ? "text-[#EF4444]" : "text-[#6E6B82]"}`}
+                className={`w-24 shrink-0 text-right text-[13px] font-bold tabular-nums ${over ? "text-[#EF4444]" : "text-[#6E6B82]"}`}
               >
                 {!hasBudget
                   ? "No budget"

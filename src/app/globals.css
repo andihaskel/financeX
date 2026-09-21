@@ -129,3 +129,18 @@
     @apply font-sans;
   }
 }
+
+/* Incognito: blur marked numeric UI (toggle sets html[data-incognito="true"]). */
+html[data-incognito="true"] .fx-sensitive,
+html[data-incognito="true"] .tabular-nums {
+  filter: blur(7px);
+  opacity: 0.9;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-incognito="true"] input[type="number"] {
+  filter: blur(6px);
+  user-select: none;
+  -webkit-user-select: none;
+}

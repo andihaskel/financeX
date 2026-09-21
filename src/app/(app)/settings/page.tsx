@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { signOut } from "@/app/actions/auth";
 import { RulesTable } from "@/components/rules/rules-table";
+import { IncognitoSettingsToggle } from "@/components/privacy/incognito-settings-toggle";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { SurfaceCard } from "@/components/ui/surface";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -123,10 +124,14 @@ export default async function SettingsPage({
               }`}
             >
               <span className="text-sm font-bold">{item.label}</span>
-              <span className="text-[13px] font-semibold text-[#6E6B82]">{item.hint}</span>
+              <span className="text-[13px] font-semibold text-[#6E6B82] tabular-nums">{item.hint}</span>
               <span className="ml-auto text-[#D8D4E8]">→</span>
             </Link>
           ))}
+        </SurfaceCard>
+
+        <SurfaceCard className="px-6 py-1">
+          <IncognitoSettingsToggle />
         </SurfaceCard>
 
         <SurfaceCard className="px-6 py-1">

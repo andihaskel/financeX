@@ -520,7 +520,7 @@ function CommitmentRow({
             </button>
           </div>
         </div>
-        <p className="shrink-0 whitespace-nowrap text-[12px] font-bold text-[#1C1B29] md:text-[13px]">
+        <p className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-[#1C1B29] md:text-[13px]">
           {amountLabel}
         </p>
         <p
@@ -601,7 +601,7 @@ function CommitmentRow({
               {linkedTx ? (
                 <div className="mb-3 rounded-[14px] border border-[#EAF7F0] bg-[#EAF7F0]/70 px-3.5 py-3">
                   <p className="text-[13px] font-bold text-[#0F9D58]">Linked movement</p>
-                  <p className="mt-1 text-xs font-semibold text-[#4B4860]">
+                    <p className="mt-1 text-xs font-semibold text-[#4B4860] tabular-nums">
                     {format(parseISO(linkedTx.transaction_date), "MMM d")} ·{" "}
                     {linkedTx.description} ·{" "}
                     {formatControlAmount(
@@ -655,7 +655,7 @@ function CommitmentRow({
                         <span className="truncate text-[13px] font-bold">
                           {tx.description}
                         </span>
-                        <span className="mt-0.5 text-[11px] font-semibold text-[#6E6B82]">
+                        <span className="mt-0.5 text-[11px] font-semibold text-[#6E6B82] tabular-nums">
                           {format(parseISO(tx.transaction_date), "MMM d")} ·{" "}
                           {formatControlAmount(
                             Math.abs(tx.amount),
@@ -795,8 +795,8 @@ function CommitmentSection({
   return (
     <SurfaceCard className="!px-5 !py-1">
       <div className="flex items-baseline justify-between border-b border-[#F1EFF7] py-[9px]">
-        <p className="text-[13px] font-extrabold text-[#1C1B29]">{title}</p>
-        <p className="text-xs font-bold text-[#1C1B29]">{subtitle}</p>
+        <p className="text-[13px] font-extrabold text-[#1C1B29] tabular-nums">{title}</p>
+        <p className="text-xs font-bold text-[#1C1B29] tabular-nums">{subtitle}</p>
       </div>
       {rows.length === 0 ? (
         <p className="py-6 text-center text-sm font-semibold text-[#1C1B29]">
@@ -1184,10 +1184,10 @@ export function ControlClient({
               <p className="text-sm font-bold">Nothing pending for {monthLabel}</p>
             ) : (
               <>
-                <p className="mb-1 text-sm font-extrabold">
+                <p className="mb-1 text-sm font-extrabold tabular-nums">
                   {summary.pendingCount} pending
                 </p>
-                <p className="text-[13px] font-semibold text-[#6E6B82]">
+                <p className="text-[13px] font-semibold text-[#6E6B82] tabular-nums">
                   {[
                     formatPeriodAmounts(summary.payByCurrency, "pay"),
                     formatPeriodAmounts(summary.receiveByCurrency, "receive"),
@@ -1196,12 +1196,12 @@ export function ControlClient({
                     .join(" · ") || "Variable amounts still open"}
                 </p>
                 {soonCount > 0 && (
-                  <p className="mt-1.5 text-xs font-bold text-[#B45309]">
+                  <p className="mt-1.5 text-xs font-bold text-[#B45309] tabular-nums">
                     ◷ {soonCount} due soon
                   </p>
                 )}
                 {overdueCount > 0 && (
-                  <p className="mt-1 text-xs font-bold text-[#EF4444]">
+                  <p className="mt-1 text-xs font-bold text-[#EF4444] tabular-nums">
                     ! {overdueCount} overdue
                   </p>
                 )}

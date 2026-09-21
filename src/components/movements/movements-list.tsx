@@ -637,7 +637,7 @@ function MovementRow({
           · {accountName}
         </p>
       </div>
-      <p className="shrink-0 text-[15px] font-extrabold">
+      <p className="shrink-0 text-[15px] font-extrabold tabular-nums">
         {formatTransactionAmount(tx.amount, tx.currency)}
       </p>
 

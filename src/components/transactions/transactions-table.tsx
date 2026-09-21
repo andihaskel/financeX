@@ -55,11 +55,11 @@ export function TransactionsTable({
                 <TableCell>
                   <Badge variant="outline">{tx.transaction_type}</Badge>
                 </TableCell>
-                <TableCell className="text-right font-medium">
+                <TableCell className="text-right font-medium tabular-nums">
                   {formatCurrency(tx.amount, tx.currency)}
                 </TableCell>
                 <TableCell>{tx.currency}</TableCell>
-                <TableCell className="text-right text-muted-foreground">
+                <TableCell className="text-right text-muted-foreground tabular-nums">
                   {formatCurrency(usd)}
                 </TableCell>
                 <TableCell>

@@ -15,7 +15,7 @@ export function KpiCard({ label, value, sublabel, trend = "neutral" }: KpiCardPr
       </p>
       <p
         className={cn(
-          "mt-2 text-3xl font-semibold tracking-tight",
+          "mt-2 text-3xl font-semibold tracking-tight tabular-nums",
           trend === "positive" && "text-emerald-600",
           trend === "negative" && "text-rose-600"
         )}
@@ -23,7 +23,7 @@ export function KpiCard({ label, value, sublabel, trend = "neutral" }: KpiCardPr
         {value}
       </p>
       {sublabel && (
-        <p className="mt-1 text-sm text-muted-foreground">{sublabel}</p>
+        <p className="mt-1 text-sm text-muted-foreground tabular-nums">{sublabel}</p>
       )}
     </div>
   );

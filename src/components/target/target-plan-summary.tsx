@@ -113,12 +113,15 @@ export function TargetPlanSummary({
 
         {overBudget && (
           <p className="mt-3 text-xs font-semibold text-[#B91C1C]">
-            Category targets are {formatMoney(summary.budgetGap)} above room to spend.
+            Category targets are{" "}
+            <span className="tabular-nums">{formatMoney(summary.budgetGap)}</span> above room to
+            spend.
           </p>
         )}
         {underBudget && summary.targetToSpend > 0 && (
           <p className="mt-3 text-xs font-semibold text-[#6C3FD1]">
-            {formatMoney(Math.abs(summary.budgetGap))} unallocated vs room to spend.
+            <span className="tabular-nums">{formatMoney(Math.abs(summary.budgetGap))}</span>{" "}
+            unallocated vs room to spend.
           </p>
         )}
       </SurfaceCard>

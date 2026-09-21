@@ -162,7 +162,7 @@ export function ReviewTransactionRow({
         <span className="size-[18px] shrink-0" aria-hidden />
       )}
       <p className="min-w-[120px] flex-1 truncate text-sm font-bold">{transaction.description}</p>
-      <p className="shrink-0 text-sm font-extrabold">
+      <p className="shrink-0 text-sm font-extrabold tabular-nums">
         {formatReviewAmount(transaction.amount, transaction.currency)}
       </p>
       {readonly ? (

@@ -39,7 +39,7 @@ function PlanGapNote({ gap, label }: { gap: number; label: string }) {
   if (gap > 0) {
     return (
       <p className="mt-2 text-xs font-semibold text-[#B91C1C]">
-        {formatMoney(gap)} above room to spend in {label}.
+        <span className="tabular-nums">{formatMoney(gap)}</span> above room to spend in {label}.
       </p>
     );
   }
@@ -47,7 +47,7 @@ function PlanGapNote({ gap, label }: { gap: number; label: string }) {
   if (gap < 0) {
     return (
       <p className="mt-2 text-xs font-semibold text-[#6C3FD1]">
-        {formatMoney(Math.abs(gap))} unallocated in {label}.
+        <span className="tabular-nums">{formatMoney(Math.abs(gap))}</span> unallocated in {label}.
       </p>
     );
   }
@@ -88,16 +88,16 @@ export function TargetOverviewPanel({
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <p className="text-[13px] font-semibold opacity-80">Planned (year)</p>
-            <p className="mt-1.5 text-[22px] font-extrabold">
+            <p className="mt-1.5 text-[22px] font-extrabold tabular-nums">
               {formatMoney(data.plannedIncomeAnnual)}
             </p>
-            <p className="mt-1 text-[11px] font-semibold opacity-70">
+            <p className="mt-1 text-[11px] font-semibold opacity-70 tabular-nums">
               {formatMoney(data.plannedIncomeMonthly)}/mo from Settings
             </p>
           </div>
           <div>
             <p className="text-[13px] font-semibold opacity-80">Actual (year)</p>
-            <p className="mt-1.5 text-[22px] font-extrabold">
+            <p className="mt-1.5 text-[22px] font-extrabold tabular-nums">
               {formatMoney(data.actualIncomeYear)}
             </p>
             <p className="mt-1 text-[11px] font-semibold opacity-70">{actualIncomeNote}</p>
@@ -106,7 +106,7 @@ export function TargetOverviewPanel({
             <p className="text-[13px] font-semibold opacity-80">vs plan (year)</p>
             <p
               className={cn(
-                "mt-1.5 text-[22px] font-extrabold",
+                "mt-1.5 text-[22px] font-extrabold tabular-nums",
                 extraIncomeYear && "text-white",
                 missingIncomeYear && "text-[#FFD4D4]"
               )}
@@ -133,8 +133,8 @@ export function TargetOverviewPanel({
             {formatMoney(wealthTotalUsd + cashTotalUsd)}
           </p>
           <p className="mt-1 text-xs font-semibold text-[#6E6B82]">
-            {formatMoney(cashTotalUsd)} cash in accounts · {formatMoney(wealthTotalUsd)} tracked
-            positions
+            <span className="tabular-nums">{formatMoney(cashTotalUsd)}</span> cash in accounts ·{" "}
+            <span className="tabular-nums">{formatMoney(wealthTotalUsd)}</span> tracked positions
           </p>
         </div>
         <Link

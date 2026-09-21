@@ -145,7 +145,7 @@ export default async function MonthPage({
             className="rounded-[18px] bg-white/15 px-4 py-4 transition-colors hover:bg-white/25"
           >
             <p className="text-[13px] opacity-80">Income</p>
-            <p className="mt-1.5 text-2xl font-extrabold">{formatMoney(metrics.income)}</p>
+            <p className="mt-1.5 text-2xl font-extrabold tabular-nums">{formatMoney(metrics.income)}</p>
           </Link>
           <Link
             href={buildMovementsHref({
@@ -156,16 +156,16 @@ export default async function MonthPage({
             className="rounded-[18px] bg-white/15 px-4 py-4 transition-colors hover:bg-white/25"
           >
             <p className="text-[13px] opacity-80">Spent</p>
-            <p className="mt-1.5 text-2xl font-extrabold">{formatMoney(metrics.totalSpending)}</p>
+            <p className="mt-1.5 text-2xl font-extrabold tabular-nums">{formatMoney(metrics.totalSpending)}</p>
           </Link>
           <div className="col-span-2 rounded-[18px] bg-white/15 px-4 py-4 md:col-span-1">
             <div className="mb-1.5 flex items-start justify-between">
               <p className="text-[13px] opacity-80">Saved</p>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#5F3DC4]">
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#5F3DC4] tabular-nums">
                 {formatPercent(metrics.savingsRate)}
               </span>
             </div>
-            <p className="text-2xl font-extrabold">{formatMoney(metrics.savings)}</p>
+            <p className="text-2xl font-extrabold tabular-nums">{formatMoney(metrics.savings)}</p>
           </div>
         </div>
       </GradientHero>
@@ -186,13 +186,13 @@ export default async function MonthPage({
       <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
         <SurfaceCard>
           <p className="text-sm font-semibold text-[#6E6B82]">Your usual expenses</p>
-          <p className="mt-1.5 text-[26px] font-extrabold">
+          <p className="mt-1.5 text-[26px] font-extrabold tabular-nums">
             {formatMoney(metrics.coreLiving)}
           </p>
         </SurfaceCard>
         <SurfaceCard>
           <p className="text-sm font-semibold text-[#6E6B82]">Extra this month</p>
-          <p className="mt-1.5 text-[26px] font-extrabold">
+          <p className="mt-1.5 text-[26px] font-extrabold tabular-nums">
             {formatMoney(metrics.extraordinary)}
           </p>
           {metrics.extraordinary > 0 && (
@@ -255,7 +255,7 @@ export default async function MonthPage({
                   {tx.categories?.name ?? "Uncategorized"} · {accountName}
                 </p>
               </div>
-              <p className="text-[15px] font-extrabold">
+              <p className="text-[15px] font-extrabold tabular-nums">
                 {formatTransactionAmount(tx.amount, tx.currency)}
               </p>
             </div>
