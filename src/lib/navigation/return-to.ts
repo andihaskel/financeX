@@ -21,11 +21,13 @@ export function buildMovementsHref(options: {
   month?: string;
   year?: number | string;
   type?: string;
+  accountId?: string;
   extraordinary?: boolean;
   returnTo?: string;
 }): string {
   const params = new URLSearchParams();
   if (options.categoryId) params.set("category", options.categoryId);
+  if (options.accountId) params.set("account", options.accountId);
   if (options.month) params.set("month", options.month);
   if (options.year) params.set("year", String(options.year));
   if (options.type) params.set("type", options.type);

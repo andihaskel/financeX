@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
+import { Eye, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deletePeriodTransactions } from "@/app/actions/transactions";
@@ -17,6 +18,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SectionTitle, SurfaceCard } from "@/components/ui/surface";
+import { buildMovementsHref } from "@/lib/navigation/return-to";
+import { cn } from "@/lib/utils";
 
 export interface MonthDataAccountRow {
   id: string;
@@ -26,6 +29,44 @@ export interface MonthDataAccountRow {
   count: number;
   color: string;
 }
+
+function AccountActionIcon({
+  label,
+  href,
+  onClick,
+  tone = "muted",
+  children,
+}: {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  tone?: "muted" | "danger" | "brand";
+  children: React.ReactNode;
+}) {
+  const className = cn(
+    "inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+    tone === "danger" && "text-[#9E9AB0] hover:bg-[#FEE2E2] hover:text-[#EF4444]",
+    tone === "brand" && "text-[#9E9AB0] hover:bg-[#F3F1F9] hover:text-[#6C3FD1]",
+    tone === "muted" && "text-[#9E9AB0] hover:bg-[#F3F1F9] hover:text-[#1C1B29]"
+  );
+
+  if (href) {
+    return (
+      <Link href={href} aria-label={label} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" aria-label={label} onClick={onClick} className={className}>
+      {children}
+    </button>
+  );
+}
+
+const addIconClassName =
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-[#9E9AB0] transition-colors hover:bg-[#F3F1F9] hover:text-[#6C3FD1]";
 
 function DeleteAccountDataButton({
   month,
@@ -107,6 +148,52 @@ function DeleteAccountDataButton({
   );
 }
 
+function AccountRowActions({
+  month,
+  monthLabel,
+  account,
+}: {
+  month: string;
+  monthLabel: string;
+  account: MonthDataAccountRow;
+}) {
+  const movementsHref = buildMovementsHref({
+    month,
+    accountId: account.id,
+    returnTo: `/month/${month}`,
+  });
+
+  if (account.count > 0) {
+    return (
+      <div className="flex shrink-0 items-center gap-1">
+        <OpenImportButton
+          month={month}
+          accountId={account.id}
+          className={addIconClassName}
+        >
+          <Plus className="size-4" aria-hidden />
+          <span className="sr-only">Add {account.name} movements</span>
+        </OpenImportButton>
+        <AccountActionIcon label={`View ${account.name} movements`} href={movementsHref}>
+          <Eye className="size-4" />
+        </AccountActionIcon>
+        <DeleteAccountDataButton month={month} monthLabel={monthLabel} account={account} />
+      </div>
+    );
+  }
+
+  if (account.imported) {
+    return <span className="shrink-0 text-[13px] font-bold text-[#10B981]">✓</span>;
+  }
+
+  return (
+    <OpenImportButton month={month} accountId={account.id} className={addIconClassName}>
+      <Plus className="size-4" aria-hidden />
+      <span className="sr-only">Add {account.name} movements</span>
+    </OpenImportButton>
+  );
+}
+
 export function MonthDataPanel({
   month,
   monthLabel,
@@ -135,24 +222,7 @@ export function MonthDataPanel({
             <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[#1C1B29]">
               {account.name}
             </p>
-            {account.count > 0 ? (
-              <div className="flex shrink-0 items-center gap-3">
-                <OpenImportButton month={month} accountId={account.id}>
-                  <span className="text-[13px] font-bold text-[#6C3FD1]">+ Add more</span>
-                </OpenImportButton>
-                <DeleteAccountDataButton
-                  month={month}
-                  monthLabel={monthLabel}
-                  account={account}
-                />
-              </div>
-            ) : account.imported ? (
-              <span className="shrink-0 text-[13px] font-bold text-[#10B981]">✓</span>
-            ) : (
-              <OpenImportButton month={month} accountId={account.id}>
-                <span className="shrink-0 text-[13px] font-bold text-[#6C3FD1]">+ Add</span>
-              </OpenImportButton>
-            )}
+            <AccountRowActions month={month} monthLabel={monthLabel} account={account} />
           </div>
         ))}
       </SurfaceCard>
