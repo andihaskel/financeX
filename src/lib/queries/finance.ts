@@ -284,11 +284,20 @@ export async function getTargetBudgets(month: string) {
 export async function getTargetSummary(month: string) {
   const user = await getUser();
   if (!user) {
-    return { expectedIncome: 0, targetToSpend: 0, goalToSave: 0, savingsPercent: 40 };
+    return {
+      expectedIncome: 0,
+      targetToSpend: 0,
+      goalToSave: 0,
+      savingsPercent: 40,
+      roomToSpend: 0,
+      budgetGap: 0,
+      hasOwnBudgets: false,
+    };
   }
 
   const supabase = await createClient();
-  const [incomeResult, settingsResult, budgetData] = await Promise.all([
+  const monthStart = `${month}-01`;
+  const [incomeResult, settingsResult, budgetData, ownBudgetsResult] = await Promise.all([
     supabase
       .from("income_sources")
       .select("*")
@@ -296,6 +305,11 @@ export async function getTargetSummary(month: string) {
       .eq("active", true),
     supabase.from("user_settings").select("*").eq("user_id", user.id).single(),
     getTargetBudgets(month),
+    supabase
+      .from("monthly_budgets")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("month", monthStart),
   ]);
 
   const uyuRate = settingsResult.data?.uyu_to_usd_rate ?? 40;
@@ -310,8 +324,18 @@ export async function getTargetSummary(month: string) {
 
   const targetToSpend = budgetData.reduce((sum, row) => sum + row.budget, 0);
   const goalToSave = expectedIncome * (savingsPercent / 100);
+  const roomToSpend = expectedIncome - goalToSave;
+  const budgetGap = targetToSpend - roomToSpend;
 
-  return { expectedIncome, targetToSpend, goalToSave, savingsPercent };
+  return {
+    expectedIncome,
+    targetToSpend,
+    goalToSave,
+    savingsPercent,
+    roomToSpend,
+    budgetGap,
+    hasOwnBudgets: (ownBudgetsResult.count ?? 0) > 0,
+  };
 }
 
 export async function getMonthlyTrend(currentMonth: string) {

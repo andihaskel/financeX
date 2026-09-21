@@ -105,6 +105,34 @@ export async function updateBudget(
   return { success: true };
 }
 
+export async function updateBudgets(
+  month: string,
+  budgets: { categoryId: string; budgetAmount: number }[]
+) {
+  const user = await getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
+  const rows = budgets.map((row) => ({
+    user_id: user.id,
+    category_id: row.categoryId,
+    month,
+    budget_amount: row.budgetAmount,
+    currency: "USD" as Currency,
+  }));
+
+  const { error } = await supabase.from("monthly_budgets").upsert(rows, {
+    onConflict: "user_id,category_id,month",
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/target");
+  revalidatePath("/home");
+  revalidatePath("/month");
+  return { success: true };
+}
+
 export async function updateIncomeSource(
   id: string,
   data: { expected_monthly_amount?: number; active?: boolean; name?: string }
