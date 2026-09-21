@@ -43,7 +43,7 @@ export function IncognitoToggleFab() {
       onClick={toggleIncognito}
       className={cn(
         "fixed z-[60] flex h-11 w-11 items-center justify-center rounded-full border shadow-[0_4px_20px_rgba(28,27,41,0.12)] transition-colors",
-        "right-4 bottom-[calc(92px+env(safe-area-inset-bottom))] md:bottom-6 md:right-8",
+        "right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] md:bottom-6 md:right-8",
         incognito
           ? "border-[#6C3FD1] bg-[#6C3FD1] text-white hover:bg-[#5A32B8]"
           : "border-[#E2DEF0] bg-white text-[#6E6B82] hover:bg-[#FAF9FC] hover:text-[#6C3FD1]"

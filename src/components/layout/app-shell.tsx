@@ -1,6 +1,6 @@
 "use client";
 
-import { AppBottomNav } from "@/components/layout/app-bottom-nav";
+import { AppMobileHeader } from "@/components/layout/app-mobile-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -8,11 +8,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-[#F3F1F9] text-[#1C1B29]">
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="relative flex-1 px-4 pb-[calc(84px+env(safe-area-inset-bottom))] pt-5 md:px-14 md:pb-20 md:pt-11">
+        <AppMobileHeader />
+        <main className="relative flex-1 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 md:px-14 md:pb-20 md:pt-11">
           <div className="mx-auto max-w-[920px]">{children}</div>
         </main>
       </div>
-      <AppBottomNav />
     </div>
   );
 }
