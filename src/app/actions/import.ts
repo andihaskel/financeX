@@ -28,6 +28,7 @@ import {
   generateTransactionFingerprint,
   normalizeDescription,
 } from "@/lib/categorization/normalize";
+import { monthsCoveredByDates } from "@/lib/import/statement-months";
 import { readCsvFile } from "@/lib/parsers/encoding";
 import { allParsers } from "@/lib/parsers/santander";
 import { detectParser } from "@/lib/parsers/types";
@@ -188,6 +189,9 @@ export interface ParsedFilePreview {
   content: string;
   suggestedAccountId: string | null;
   needsAccountSelection: boolean;
+  statementStart: string | null;
+  statementEnd: string | null;
+  monthsCovered: string[];
 }
 
 export async function parseUploadedFiles(formData: FormData) {
@@ -230,6 +234,13 @@ export async function parseUploadedFiles(formData: FormData) {
         },
         accounts
       );
+      const monthsCovered = monthsCoveredByDates(
+        result.transactions.map((tx) => tx.transaction_date)
+      );
+      const sortedDates = result.transactions
+        .map((tx) => tx.transaction_date)
+        .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+        .sort();
 
       previews.push({
         filename: file.name,
@@ -241,6 +252,10 @@ export async function parseUploadedFiles(formData: FormData) {
         content,
         suggestedAccountId: match.account?.id ?? null,
         needsAccountSelection: true,
+        statementStart: result.statementPeriod?.start ?? sortedDates[0] ?? null,
+        statementEnd:
+          result.statementPeriod?.end ?? sortedDates[sortedDates.length - 1] ?? null,
+        monthsCovered,
       });
     } catch (error) {
       errors.push(
@@ -283,6 +298,8 @@ export async function processImport(
 
   const importIds: string[] = [];
   const importedAccountIds = new Set<string>();
+  const monthsCovered = new Set<string>();
+  const monthsUpdated = new Set<string>();
   let totalImported = 0;
   let totalSkipped = 0;
   let totalUncategorized = 0;
@@ -372,6 +389,8 @@ export async function processImport(
     const toInsert: TransactionInsert[] = [];
 
     for (const tx of parsed.transactions) {
+      monthsCovered.add(tx.transaction_date.slice(0, 7));
+
       const normalized = normalizeDescription(tx.description);
       const fingerprint = generateTransactionFingerprint({
         accountId,
@@ -429,6 +448,10 @@ export async function processImport(
           .eq("id", importRecord.id);
         return { error: insertError.message };
       }
+
+      for (const row of enrichedRows) {
+        monthsUpdated.add(row.transaction_date.slice(0, 7));
+      }
     }
 
     totalImported += enrichedRows.length;
@@ -460,6 +483,8 @@ export async function processImport(
     totalSuggested,
     totalAuto,
     importedAccountIds: [...importedAccountIds],
+    monthsCovered: [...monthsCovered].sort(),
+    monthsUpdated: [...monthsUpdated].sort(),
     redirectTo:
       importIds.length === 1 && totalToConfirm > 0 ? `/review/${importIds[0]}` : undefined,
   };

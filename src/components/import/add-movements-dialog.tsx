@@ -27,6 +27,10 @@ import {
   getAccountDisplayName,
 } from "@/lib/accounts/helpers";
 import { getCategoryVisual } from "@/lib/design/theme";
+import {
+  formatMonthsCoveredLabel,
+  formatStatementDateRange,
+} from "@/lib/import/statement-months";
 import { buildMovementsHref } from "@/lib/navigation/return-to";
 import type { MonthImportCoverage } from "@/lib/queries/import-coverage";
 import type { Account, Category, Currency, TransactionType } from "@/types/database";
@@ -63,6 +67,8 @@ interface ImportResult {
   totalAuto: number;
   totalSuggested?: number;
   redirectTo?: string;
+  monthsCovered: string[];
+  monthsUpdated: string[];
   coverage: MonthImportCoverage | null;
 }
 
@@ -299,7 +305,13 @@ export function AddMovementsDialog({
         return;
       }
 
-      const coverage = await fetchMonthImportCoverage(targetMonth);
+      const monthsCovered = result.monthsCovered ?? [];
+      const monthsUpdated = result.monthsUpdated ?? [];
+      const coverageMonth =
+        monthsUpdated[monthsUpdated.length - 1] ??
+        monthsCovered[monthsCovered.length - 1] ??
+        targetMonth;
+      const coverage = await fetchMonthImportCoverage(coverageMonth);
       setImportResult({
         totalImported: result.totalImported ?? 0,
         totalSkipped: result.totalSkipped ?? 0,
@@ -308,8 +320,13 @@ export function AddMovementsDialog({
         totalAuto: result.totalAuto ?? 0,
         totalSuggested: result.totalSuggested ?? 0,
         redirectTo: result.redirectTo,
+        monthsCovered,
+        monthsUpdated,
         coverage,
       });
+      if (coverageMonth !== targetMonth) {
+        setTargetMonth(coverageMonth);
+      }
       setStep("result");
     });
   }
@@ -383,9 +400,10 @@ export function AddMovementsDialog({
             <>
               <h2 className="text-[22px] font-extrabold">Add movements</h2>
               <p className="mt-1.5 text-sm font-semibold text-[#6E6B82]">
-                Upload your bank or card file and we&apos;ll organize it.
+                Upload your bank or card file and we&apos;ll organize it. Existing movements
+                stay — duplicates are skipped.
               </p>
-              <p className="mt-5 text-xs font-semibold text-[#6E6B82]">Adding to:</p>
+              <p className="mt-5 text-xs font-semibold text-[#6E6B82]">After import, open:</p>
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
@@ -393,6 +411,10 @@ export function AddMovementsDialog({
               >
                 {monthLabel} ▾
               </button>
+              <p className="mt-2 text-[12px] font-semibold text-[#9E9AB0]">
+                File dates decide which months get movements. You can upload a statement that
+                spans two months without replacing what&apos;s already there.
+              </p>
               {preferredAccountId &&
                 (() => {
                   const preferred = accounts.find((account) => account.id === preferredAccountId);
@@ -469,6 +491,15 @@ export function AddMovementsDialog({
                     const suggestedAccount = preview.suggestedAccountId
                       ? accounts.find((a) => a.id === preview.suggestedAccountId)
                       : null;
+                    const dateRange =
+                      preview.statementStart && preview.statementEnd
+                        ? formatStatementDateRange(
+                            preview.statementStart,
+                            preview.statementEnd
+                          )
+                        : null;
+                    const monthsLabel = formatMonthsCoveredLabel(preview.monthsCovered);
+                    const spansMonths = preview.monthsCovered.length > 1;
 
                     return (
                       <div
@@ -479,6 +510,18 @@ export function AddMovementsDialog({
                           {preview.filename} · {preview.transactionCount} movements ·{" "}
                           {preview.currency}
                         </p>
+                        {(dateRange || monthsLabel) && (
+                          <p className="mt-1 text-[12px] font-semibold text-[#6E6B82]">
+                            {dateRange ? `Dates: ${dateRange}` : null}
+                            {dateRange && monthsLabel ? " · " : null}
+                            {monthsLabel ? `Covers ${monthsLabel}` : null}
+                          </p>
+                        )}
+                        {spansMonths && (
+                          <p className="mt-1 text-[12px] font-bold text-[#6C3FD1]">
+                            Spans more than one month — existing movements will be kept.
+                          </p>
+                        )}
                         <div className="mt-2">
                           <label className="mb-1 block text-xs font-bold text-[#6E6B82]">
                             Which account is this file for?
@@ -719,7 +762,16 @@ export function AddMovementsDialog({
 
           {step === "result" && importResult && (
             <>
-              <h2 className="text-xl font-extrabold">{monthLabel}</h2>
+              <h2 className="text-xl font-extrabold">
+                {importResult.monthsCovered.length > 1
+                  ? formatMonthsCoveredLabel(importResult.monthsCovered)
+                  : monthLabel}
+              </h2>
+              {importResult.monthsCovered.length > 1 && (
+                <p className="mt-2 text-[13px] font-semibold text-[#6E6B82]">
+                  Statement covered more than one month. Existing movements were kept.
+                </p>
+              )}
               {importResult.coverage && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {importResult.coverage.accounts.map((account) => (
@@ -739,6 +791,7 @@ export function AddMovementsDialog({
               <div className="mt-5 rounded-[18px] bg-[#F3F1F9] p-5">
                 <p className="text-xl font-extrabold">{totalFound} movements found</p>
                 <div className="mt-3 space-y-2 text-sm font-semibold text-[#4B4860]">
+                  <p>{importResult.totalImported} new movements added</p>
                   <p>{importResult.totalAuto} organized automatically</p>
                   {(importResult.totalSuggested ?? 0) > 0 && (
                     <p>{importResult.totalSuggested} suggested by AI</p>
@@ -747,7 +800,9 @@ export function AddMovementsDialog({
                     <p>{importResult.totalReview} need your help</p>
                   )}
                   {importResult.totalSkipped > 0 && (
-                    <p>{importResult.totalSkipped} already existed</p>
+                    <p>
+                      {importResult.totalSkipped} already existed — left untouched
+                    </p>
                   )}
                 </div>
               </div>

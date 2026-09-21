@@ -134,11 +134,16 @@ export function MonthDataPanel({
               {account.name}
             </p>
             {account.count > 0 ? (
-              <DeleteAccountDataButton
-                month={month}
-                monthLabel={monthLabel}
-                account={account}
-              />
+              <div className="flex shrink-0 items-center gap-3">
+                <OpenImportButton month={month} accountId={account.id}>
+                  <span className="text-[13px] font-bold text-[#6C3FD1]">+ Add more</span>
+                </OpenImportButton>
+                <DeleteAccountDataButton
+                  month={month}
+                  monthLabel={monthLabel}
+                  account={account}
+                />
+              </div>
             ) : account.imported ? (
               <span className="shrink-0 text-[13px] font-bold text-[#10B981]">✓</span>
             ) : (
