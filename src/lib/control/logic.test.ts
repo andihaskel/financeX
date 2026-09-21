@@ -77,6 +77,7 @@ describe("control matching", () => {
       categorization_rule_id: null,
       notes: null,
       fingerprint: "x",
+      refunds_transaction_id: null,
       created_at: "",
       updated_at: "",
     } satisfies Transaction;

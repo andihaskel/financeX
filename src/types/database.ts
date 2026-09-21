@@ -81,6 +81,7 @@ export interface Transaction {
   categorization_rule_id: string | null;
   notes: string | null;
   fingerprint: string;
+  refunds_transaction_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -260,6 +261,7 @@ export interface Database {
           categorization_rule_id?: string | null;
           notes?: string | null;
           fingerprint: string;
+          refunds_transaction_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -282,6 +284,7 @@ export interface Database {
           categorization_rule_id?: string | null;
           notes?: string | null;
           fingerprint?: string;
+          refunds_transaction_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

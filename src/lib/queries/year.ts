@@ -2,13 +2,16 @@ import { format, parseISO } from "date-fns";
 import { cache } from "react";
 
 import {
-  calculateCoreLivingExpenses,
-  calculateExtraordinarySpending,
+  calculateAttributedCoreLivingExpenses,
+  calculateAttributedExtraordinarySpending,
+  calculateAttributedTotalSpending,
+  groupAttributedSpendingByCategory,
+  type LinkedTransactionForAccounting,
+} from "@/lib/accounting/refund-links";
+import {
   calculateIncome,
   calculateSavings,
   calculateSavingsRate,
-  calculateTotalSpending,
-  groupSpendingByCategory,
 } from "@/lib/accounting/calculations";
 import {
   dedupeAccounts,
@@ -20,6 +23,7 @@ import type { Account, Category, Transaction } from "@/types/database";
 
 import { getUserSettings } from "./finance";
 import type { AccountImportStatus } from "./import-coverage";
+import { fetchYearTransactionsWithRefundLinks } from "./refund-link-pool";
 
 export interface MonthSummary {
   month: string;
@@ -96,6 +100,7 @@ function emptyYear(year: number): YearSummary {
 function buildYearSummary(
   year: number,
   transactions: Transaction[],
+  linkPool: LinkedTransactionForAccounting[],
   categories: Category[],
   uyuRate: number
 ): YearSummary {
@@ -111,9 +116,21 @@ function buildYearSummary(
     const monthTx = byMonth.get(month) ?? [];
     const hasData = monthTx.length > 0;
     const income = calculateIncome(monthTx, uyuRate);
-    const spent = calculateTotalSpending(monthTx, uyuRate);
-    const usual = calculateCoreLivingExpenses(monthTx, categories, uyuRate);
-    const extra = calculateExtraordinarySpending(monthTx, categories, uyuRate);
+    const spent = calculateAttributedTotalSpending(month, monthTx, linkPool, uyuRate);
+    const usual = calculateAttributedCoreLivingExpenses(
+      month,
+      monthTx,
+      linkPool,
+      categories,
+      uyuRate
+    );
+    const extra = calculateAttributedExtraordinarySpending(
+      month,
+      monthTx,
+      linkPool,
+      categories,
+      uyuRate
+    );
     const saved = calculateSavings(income, spent);
     const savingsRate = calculateSavingsRate(income, saved);
 
@@ -209,30 +226,46 @@ export const getHomeYearData = cache(async (year: number): Promise<{
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
 
-  const [settings, txResult, catResult, accountsResult] = await Promise.all([
+  const [settings, linkPool, catResult, accountsResult] = await Promise.all([
     getUserSettings(),
-    supabase
-      .from("transactions")
-      .select(
-        "id, transaction_date, amount, currency, transaction_type, excluded_from_spending, is_extraordinary, category_id, account_id"
-      )
-      .eq("user_id", user.id)
-      .gte("transaction_date", start)
-      .lte("transaction_date", end),
+    fetchYearTransactionsWithRefundLinks(supabase, user.id, year),
     supabase.from("categories").select("*").eq("user_id", user.id).eq("active", true),
     supabase.from("accounts").select("*").eq("user_id", user.id).eq("active", true),
   ]);
 
   const uyuRate = settings?.uyu_to_usd_rate ?? 40;
-  const transactions = (txResult.data ?? []) as Transaction[];
+  const transactions = linkPool.filter(
+    (tx) => tx.transaction_date >= start && tx.transaction_date <= end
+  ) as Transaction[];
   const categories = (catResult.data ?? []) as Category[];
   const accounts = (accountsResult.data ?? []) as Account[];
 
-  const summary = buildYearSummary(year, transactions, categories, uyuRate);
-  const categoryTotals = groupSpendingByCategory(transactions, categories, uyuRate).map((c) => {
-    const cat = categories.find((x) => x.id === c.categoryId);
-    return { ...c, slug: cat?.slug ?? "otros" };
-  });
+  const summary = buildYearSummary(year, transactions, linkPool, categories, uyuRate);
+  const categoryTotalsMap = new Map<string, number>();
+  for (let i = 1; i <= 12; i++) {
+    const month = `${year}-${String(i).padStart(2, "0")}`;
+    const monthTx = transactions.filter((tx) => tx.transaction_date.startsWith(`${month}-`));
+    for (const row of groupAttributedSpendingByCategory(
+      month,
+      monthTx,
+      linkPool,
+      categories,
+      uyuRate
+    )) {
+      categoryTotalsMap.set(row.categoryId, (categoryTotalsMap.get(row.categoryId) ?? 0) + row.amount);
+    }
+  }
+  const categoryTotals = [...categoryTotalsMap.entries()]
+    .map(([categoryId, amount]) => {
+      const cat = categories.find((x) => x.id === categoryId);
+      return {
+        categoryId,
+        name: cat?.name ?? "Unknown",
+        slug: cat?.slug ?? "otros",
+        amount,
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
   const coverageMap = buildCoverageMap(year, accounts, transactions);
 
   return { summary, categories: categoryTotals, coverageMap };

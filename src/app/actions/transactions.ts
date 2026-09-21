@@ -22,6 +22,7 @@ export async function updateTransaction(
     excluded_from_spending?: boolean;
     categorization_status?: CategorizationStatus;
     transaction_date?: string;
+    refunds_transaction_id?: string | null;
   }
 ) {
   const user = await getUser();
@@ -36,7 +37,7 @@ export async function updateTransaction(
   const { data: existing, error: fetchError } = await supabase
     .from("transactions")
     .select(
-      "id, account_id, amount, normalized_description, transaction_date, category_id, transaction_type"
+      "id, account_id, amount, normalized_description, transaction_date, category_id, transaction_type, refunds_transaction_id"
     )
     .eq("id", transactionId)
     .eq("user_id", user.id)
@@ -46,9 +47,14 @@ export async function updateTransaction(
   if (!existing) return { error: "Movement not found" };
 
   const nextDate = data.transaction_date ?? existing.transaction_date;
+  const nextType = data.transaction_type ?? existing.transaction_type;
   const patch: Record<string, unknown> = {
     categorization_status: data.categorization_status ?? "manual",
   };
+  const monthKeys = new Set([
+    existing.transaction_date.slice(0, 7),
+    nextDate.slice(0, 7),
+  ]);
 
   if (data.category_id !== undefined) patch.category_id = data.category_id;
   if (data.transaction_type !== undefined) patch.transaction_type = data.transaction_type;
@@ -67,6 +73,45 @@ export async function updateTransaction(
     });
   }
 
+  if (nextType !== "refund") {
+    patch.refunds_transaction_id = null;
+  } else if (data.refunds_transaction_id !== undefined) {
+    if (!data.refunds_transaction_id) {
+      patch.refunds_transaction_id = null;
+    } else {
+      if (data.refunds_transaction_id === transactionId) {
+        return { error: "A refund cannot link to itself" };
+      }
+
+      const { data: expense, error: expenseError } = await supabase
+        .from("transactions")
+        .select("id, transaction_type, transaction_date, amount")
+        .eq("id", data.refunds_transaction_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (expenseError) return { error: expenseError.message };
+      if (!expense || expense.transaction_type !== "expense" || expense.amount >= 0) {
+        return { error: "Choose a valid expense to link" };
+      }
+
+      patch.refunds_transaction_id = data.refunds_transaction_id;
+      monthKeys.add(expense.transaction_date.slice(0, 7));
+    }
+  }
+
+  if (existing.refunds_transaction_id) {
+    const { data: previousExpense } = await supabase
+      .from("transactions")
+      .select("transaction_date")
+      .eq("id", existing.refunds_transaction_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (previousExpense?.transaction_date) {
+      monthKeys.add(previousExpense.transaction_date.slice(0, 7));
+    }
+  }
+
   const { error } = await supabase
     .from("transactions")
     .update(patch)
@@ -75,10 +120,6 @@ export async function updateTransaction(
 
   if (error) return { error: error.message };
 
-  const monthKeys = new Set([
-    existing.transaction_date.slice(0, 7),
-    nextDate.slice(0, 7),
-  ]);
   revalidatePath("/movements");
   revalidatePath("/home");
   revalidatePath("/review");
@@ -86,6 +127,45 @@ export async function updateTransaction(
     revalidatePath(`/month/${month}`);
   }
   return { success: true };
+}
+
+export async function searchExpensesForRefundLink(options: {
+  refundId?: string;
+  accountId?: string;
+  query?: string;
+  limit?: number;
+}) {
+  const user = await getUser();
+  if (!user) return { error: "Not authenticated" as const, expenses: [] };
+
+  const supabase = await createClient();
+  const limit = Math.min(options.limit ?? 25, 50);
+  const sixMonthsAgo = format(new Date(Date.now() - 1000 * 60 * 60 * 24 * 180), "yyyy-MM-dd");
+
+  let request = supabase
+    .from("transactions")
+    .select("id, description, transaction_date, amount, currency, account_id")
+    .eq("user_id", user.id)
+    .eq("transaction_type", "expense")
+    .lt("amount", 0)
+    .gte("transaction_date", sixMonthsAgo)
+    .order("transaction_date", { ascending: false })
+    .limit(limit);
+
+  if (options.accountId) {
+    request = request.eq("account_id", options.accountId);
+  }
+
+  const needle = options.query?.trim();
+  if (needle) {
+    request = request.ilike("description", `%${needle}%`);
+  }
+
+  const { data, error } = await request;
+  if (error) return { error: error.message, expenses: [] };
+
+  const expenses = (data ?? []).filter((row) => row.id !== options.refundId);
+  return { expenses };
 }
 
 export async function deleteTransaction(transactionId: string) {
@@ -546,6 +626,7 @@ export async function createManualTransaction(data: {
     categorization_rule_id: manualResult.categorization_rule_id,
     notes: null,
     fingerprint,
+    refunds_transaction_id: null,
   });
 
   if (error) return { error: error.message };

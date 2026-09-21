@@ -428,6 +428,7 @@ export async function processImport(
         categorization_rule_id: categorization.categorization_rule_id,
         notes: null,
         fingerprint,
+        refunds_transaction_id: null,
       });
 
       existingSet.add(fingerprint);

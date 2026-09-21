@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   createManualTransaction,
   deleteTransaction,
+  searchExpensesForRefundLink,
   updateTransaction,
 } from "@/app/actions/transactions";
 import {
@@ -175,6 +176,7 @@ function MovementFormFields({
   setEditAmount,
   currency,
   accountName,
+  onTypeChange,
 }: {
   editDate: string;
   setEditDate: (value: string) => void;
@@ -193,6 +195,7 @@ function MovementFormFields({
   setEditAmount?: (value: string) => void;
   currency?: "USD" | "UYU";
   accountName?: string;
+  onTypeChange?: (type: TransactionType) => void;
 }) {
   const typeMeta = SPECIAL_TYPES.find((item) => item.type === editType);
   const needsCategory = typeMeta?.needsCategory ?? false;
@@ -276,6 +279,7 @@ function MovementFormFields({
                   if (option.type !== "expense" && option.type !== "refund") {
                     setEditExtraordinary(false);
                   }
+                  onTypeChange?.(option.type);
                 }}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
@@ -365,6 +369,18 @@ function MovementRow({
   const [editType, setEditType] = useState<TransactionType>(tx.transaction_type);
   const [editCategoryId, setEditCategoryId] = useState(tx.category_id ?? "");
   const [editExtraordinary, setEditExtraordinary] = useState(tx.is_extraordinary);
+  const [editRefundsTransactionId, setEditRefundsTransactionId] = useState(
+    tx.refunds_transaction_id ?? ""
+  );
+  const [linkableExpenses, setLinkableExpenses] = useState<
+    Array<{
+      id: string;
+      description: string;
+      transaction_date: string;
+      amount: number;
+      currency: "USD" | "UYU";
+    }>
+  >([]);
 
   const { label, visual } = displayMeta(tx, categories);
   const accountName = tx.accounts ? getAccountDisplayName(tx.accounts) : "Unknown account";
@@ -380,12 +396,25 @@ function MovementRow({
     setEditType(tx.transaction_type);
     setEditCategoryId(tx.category_id ?? "");
     setEditExtraordinary(tx.is_extraordinary);
+    setEditRefundsTransactionId(tx.refunds_transaction_id ?? "");
   }
 
   useEffect(() => {
     if (!modalOpen) return;
     resetFormFromTx();
   }, [modalOpen, tx]);
+
+  useEffect(() => {
+    if (!modalOpen || editType !== "refund") return;
+
+    void searchExpensesForRefundLink({
+      refundId: tx.id,
+      accountId: tx.account_id,
+    }).then((result) => {
+      if (result.error) return;
+      setLinkableExpenses(result.expenses ?? []);
+    });
+  }, [modalOpen, editType, tx.id, tx.account_id]);
 
   function closeModal() {
     setModalMode(null);
@@ -410,6 +439,8 @@ function MovementRow({
         excluded_from_spending: typeMeta?.excluded ?? false,
         is_extraordinary: isExtraordinary,
         categorization_status: "manual",
+        refunds_transaction_id:
+          editType === "refund" ? editRefundsTransactionId || null : null,
       });
 
       if (result.error) {
@@ -429,6 +460,8 @@ function MovementRow({
         excluded_from_spending: typeMeta?.excluded ?? false,
         is_extraordinary: isExtraordinary,
         categorization_status: "manual",
+        refunds_transaction_id:
+          editType === "refund" ? editRefundsTransactionId || null : null,
         categories: nextCategory
           ? {
               id: nextCategory.id,
@@ -439,6 +472,7 @@ function MovementRow({
           : null,
       });
       closeModal();
+      router.refresh();
       toast.success("Movement updated");
     });
   }
@@ -586,8 +620,41 @@ function MovementRow({
               editAmount={editAmount}
               setEditAmount={setEditAmount}
               currency={tx.currency}
-              accountName={accountName}
-            />
+            accountName={accountName}
+            onTypeChange={(type) => {
+              if (type !== "refund") setEditRefundsTransactionId("");
+            }}
+          />
+
+          {editType === "refund" && (
+            <div className="mt-4 border-t border-[#F1EFF7] pt-4">
+              <label className="mb-2 block text-[13px] font-semibold text-[#6E6B82]">
+                Link to original expense (optional)
+              </label>
+              <select
+                value={editRefundsTransactionId}
+                onChange={(e) => setEditRefundsTransactionId(e.target.value)}
+                className="w-full rounded-[13px] border border-[#E2DEF0] px-3.5 py-3 text-sm font-semibold outline-none focus:border-[#6C3FD1]"
+              >
+                <option value="">Count in refund month (cash)</option>
+                {editRefundsTransactionId &&
+                  !linkableExpenses.some((expense) => expense.id === editRefundsTransactionId) && (
+                    <option value={editRefundsTransactionId}>Linked expense</option>
+                  )}
+                {linkableExpenses.map((expense) => (
+                  <option key={expense.id} value={expense.id}>
+                    {format(parseISO(expense.transaction_date), "MMM d, yyyy")} ·{" "}
+                    {expense.description} ·{" "}
+                    {formatTransactionAmount(expense.amount, expense.currency)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs font-semibold text-[#6E6B82]">
+                Linked refunds reduce spending in the expense month instead of the refund
+                month.
+              </p>
+            </div>
+          )}
           </div>
 
           <DialogFooter className="shrink-0 gap-2 border-t border-[#F1EFF7] px-6 pb-6 pt-4 sm:gap-2">

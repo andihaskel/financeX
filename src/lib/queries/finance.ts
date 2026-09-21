@@ -3,18 +3,21 @@ import { format, subMonths } from "date-fns";
 import { cache } from "react";
 
 import {
-  calculateCoreLivingExpenses,
-  calculateDiscretionarySpending,
-  calculateExtraordinarySpending,
+  calculateAttributedCoreLivingExpenses,
+  calculateAttributedDiscretionarySpending,
+  calculateAttributedExtraordinarySpending,
+  calculateAttributedTotalSpending,
+  groupAttributedSpendingByCategory,
+} from "@/lib/accounting/refund-links";
+import {
   calculateIncome,
   calculateSavings,
   calculateSavingsRate,
-  calculateTotalSpending,
   getTransactionUsdAmount,
-  groupSpendingByCategory,
 } from "@/lib/accounting/calculations";
 import { dedupeAccounts, sortAccounts } from "@/lib/accounts/helpers";
 import { spendingCategories } from "@/lib/categories/helpers";
+import { buildMonthRefundLinkPool } from "@/lib/queries/refund-link-pool";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type { Account, Category, Import, Transaction, UserSettings } from "@/types/database";
 
@@ -132,18 +135,53 @@ export const getMonthTransactions = cache(async (month: string) => {
 });
 
 export const getDashboardMetrics = cache(async (month: string) => {
+  const user = await getUser();
   const { transactions, categories, settings } = await getMonthTransactions(month);
+  const supabase = user ? await createClient() : null;
+  const linkPool =
+    user && supabase
+      ? await buildMonthRefundLinkPool(supabase, user.id, transactions)
+      : transactions;
   const uyuRate = settings?.uyu_to_usd_rate ?? 40;
   const savingsTarget = (settings?.savings_target_percent ?? 40) / 100;
 
   const income = calculateIncome(transactions, uyuRate);
-  const totalSpending = calculateTotalSpending(transactions, uyuRate);
-  const coreLiving = calculateCoreLivingExpenses(transactions, categories, uyuRate);
-  const extraordinary = calculateExtraordinarySpending(transactions, categories, uyuRate);
-  const discretionary = calculateDiscretionarySpending(transactions, categories, uyuRate);
+  const totalSpending = calculateAttributedTotalSpending(
+    month,
+    transactions,
+    linkPool,
+    uyuRate
+  );
+  const coreLiving = calculateAttributedCoreLivingExpenses(
+    month,
+    transactions,
+    linkPool,
+    categories,
+    uyuRate
+  );
+  const extraordinary = calculateAttributedExtraordinarySpending(
+    month,
+    transactions,
+    linkPool,
+    categories,
+    uyuRate
+  );
+  const discretionary = calculateAttributedDiscretionarySpending(
+    month,
+    transactions,
+    linkPool,
+    categories,
+    uyuRate
+  );
   const savings = calculateSavings(income, totalSpending);
   const savingsRate = calculateSavingsRate(income, savings);
-  const spendingByCategory = groupSpendingByCategory(transactions, categories, uyuRate);
+  const spendingByCategory = groupAttributedSpendingByCategory(
+    month,
+    transactions,
+    linkPool,
+    categories,
+    uyuRate
+  );
 
   const salaryIncome = sumIncomeBySlugs(transactions, categories, uyuRate, ["sueldo"]);
   const propertyIncome = sumIncomeBySlugs(transactions, categories, uyuRate, [
@@ -180,9 +218,16 @@ export const getBudgetComparison = cache(async (month: string) => {
     getMonthTransactions(month),
     resolveBudgetAmountsForMonth(supabase, user.id, monthStart),
   ]);
+  const linkPool = await buildMonthRefundLinkPool(supabase, user.id, transactions);
   const uyuRate = settings?.uyu_to_usd_rate ?? 40;
 
-  const actuals = groupSpendingByCategory(transactions, categories, uyuRate);
+  const actuals = groupAttributedSpendingByCategory(
+    month,
+    transactions,
+    linkPool,
+    categories,
+    uyuRate
+  );
   const actualMap = new Map(actuals.map((a) => [a.categoryId, a.amount]));
   const categoryById = new Map(categories.map((c) => [c.id, c]));
 
