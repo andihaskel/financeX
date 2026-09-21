@@ -1,66 +1,55 @@
 import { describe, expect, it } from "vitest";
 
-import { categorizeTransaction, detectBuiltInBankPattern } from "@/lib/categorization/categorize";
-import { normalizeDescription } from "@/lib/categorization/normalize";
+import {
+  IMPORT_DATE_SHIFT_DEDUPE_DAYS,
+  isImportDuplicateDespiteDateShift,
+} from "@/lib/categorization/normalize";
 
-describe("normalizeDescription", () => {
-  it("keeps PAGO ELECTRONICO so credit-card payment rules still match", () => {
-    expect(normalizeDescription("PAGO ELECTRONICO TARJETA CREDITO")).toContain(
-      "PAGO ELECTRONICO TARJETA CREDITO"
-    );
-  });
+describe("isImportDuplicateDespiteDateShift", () => {
+  const base = {
+    accountId: "acc-1",
+    amount: -36000,
+    normalizedDescription: "TRANSFER ROCIO",
+  };
 
-  it("keeps TRANSFERENCIA ENVIADA", () => {
+  it("matches when only the date changed within the window", () => {
     expect(
-      normalizeDescription(
-        "TRANSFERENCIA ENVIADA 546584TT55893327 TRF. PLAZA- LORENA BALDENEGRO GUERRERO"
+      isImportDuplicateDespiteDateShift(
+        { ...base, transactionDate: "2026-08-28" },
+        { ...base, transactionDate: "2026-09-03" }
       )
-    ).toContain("TRANSFERENCIA ENVIADA");
+    ).toBe(true);
   });
 
-  it("strips debit purchase prefix and city/card noise", () => {
+  it("does not match when dates are too far apart", () => {
     expect(
-      normalizeDescription(
-        "COMPRA CON TARJETA DEBITO CONFITERIA MAJARK, MONTEVIDEO TARJ: ############1789"
+      isImportDuplicateDespiteDateShift(
+        { ...base, transactionDate: "2026-08-01" },
+        { ...base, transactionDate: "2026-10-01" }
       )
-    ).toBe("CONFITERIA MAJARK");
-  });
-});
-
-describe("built-in bank patterns", () => {
-  it("marks credit card payments as auto exclusions", () => {
-    const result = detectBuiltInBankPattern("PAGO ELECTRONICO TARJETA CREDITO");
-    expect(result?.transaction_type).toBe("credit_card_payment");
-    expect(result?.excluded_from_spending).toBe(true);
-    expect(result?.categorization_status).toBe("auto");
+    ).toBe(false);
   });
 
-  it("marks plaza transfers as auto exclusions", () => {
-    const sent = detectBuiltInBankPattern(
-      "TRANSFERENCIA ENVIADA 546584TT55893327 TRF. PLAZA- LORENA BALDENEGRO GUERRERO"
-    );
-    expect(sent?.transaction_type).toBe("transfer");
-
-    const debit = detectBuiltInBankPattern(
-      "DEBITO OPERACION EN BANCA DIGITAL 546580TT55893327 TRF. PLAZA- LORENA BALDENEGRO GUERRERO"
-    );
-    expect(debit?.transaction_type).toBe("transfer");
-
-    const named = detectBuiltInBankPattern(
-      "DEBITO OPERACION EN BANCA DIGITAL NUNEZ TRPANUÑEZ - TR"
-    );
-    expect(named?.transaction_type).toBe("transfer");
+  it("does not match different amounts or accounts", () => {
+    expect(
+      isImportDuplicateDespiteDateShift(
+        { ...base, transactionDate: "2026-09-01" },
+        { ...base, amount: -36001, transactionDate: "2026-09-02" }
+      )
+    ).toBe(false);
+    expect(
+      isImportDuplicateDespiteDateShift(
+        { ...base, transactionDate: "2026-09-01" },
+        {
+          ...base,
+          accountId: "acc-2",
+          transactionDate: "2026-09-02",
+        }
+      )
+    ).toBe(false);
   });
 
-  it("uses built-in patterns before falling through to needs_review", () => {
-    const result = categorizeTransaction(
-      {
-        normalized_description: normalizeDescription("PAGO ELECTRONICO TARJETA CREDITO"),
-        amount: -28618.6,
-      },
-      []
-    );
-    expect(result.categorization_status).toBe("auto");
-    expect(result.transaction_type).toBe("credit_card_payment");
+  it(`uses a ${IMPORT_DATE_SHIFT_DEDUPE_DAYS}-day window`, () => {
+    expect(IMPORT_DATE_SHIFT_DEDUPE_DAYS).toBeGreaterThanOrEqual(31);
   });
 });

@@ -1,4 +1,8 @@
 import { createHash } from "crypto";
+import { differenceInCalendarDays, parseISO } from "date-fns";
+
+/** Max calendar days apart to treat re-import rows as the same movement after a manual date edit. */
+export const IMPORT_DATE_SHIFT_DEDUPE_DAYS = 45;
 
 export interface FingerprintInput {
   accountId: string;
@@ -21,6 +25,34 @@ export function generateTransactionFingerprint(
   ];
 
   return createHash("sha256").update(parts.join("|")).digest("hex");
+}
+
+export type TransactionDedupeFields = {
+  accountId: string;
+  amount: number;
+  normalizedDescription: string;
+  transactionDate: string;
+};
+
+/** Same account, amount, and description within a date window (e.g. moved Aug ↔ Sep). */
+export function isImportDuplicateDespiteDateShift(
+  existing: TransactionDedupeFields,
+  incoming: TransactionDedupeFields
+): boolean {
+  if (existing.accountId !== incoming.accountId) return false;
+  if (existing.amount.toFixed(2) !== incoming.amount.toFixed(2)) return false;
+
+  const existingDesc = existing.normalizedDescription.trim().toUpperCase();
+  const incomingDesc = incoming.normalizedDescription.trim().toUpperCase();
+  if (existingDesc !== incomingDesc) return false;
+
+  const days = Math.abs(
+    differenceInCalendarDays(
+      parseISO(existing.transactionDate),
+      parseISO(incoming.transactionDate)
+    )
+  );
+  return days <= IMPORT_DATE_SHIFT_DEDUPE_DAYS;
 }
 
 export function normalizeDescription(description: string): string {

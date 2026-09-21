@@ -85,18 +85,40 @@ export async function getLastImportUploadForMonthByCanonicalAccount(
 
   const { start, end } = getMonthDateRange(month);
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data: txRows } = await supabase
     .from("transactions")
-    .select("account_id, imports!inner(imported_at)")
+    .select("account_id, import_id")
     .eq("user_id", userId)
     .gte("transaction_date", start)
     .lte("transaction_date", end)
     .not("import_id", "is", null);
 
+  const importIds = [
+    ...new Set(
+      (txRows ?? [])
+        .map((row) => row.import_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    ),
+  ];
+
+  const importedAtById = new Map<string, string>();
+  if (importIds.length > 0) {
+    const { data: importRows } = await supabase
+      .from("imports")
+      .select("id, imported_at")
+      .eq("user_id", userId)
+      .in("id", importIds);
+
+    for (const row of importRows ?? []) {
+      importedAtById.set(row.id, row.imported_at);
+    }
+  }
+
   const uploadByAccountId = new Map<string, string>();
-  for (const row of data ?? []) {
-    const importedAt = (row.imports as { imported_at: string } | null)?.imported_at;
-    if (!importedAt || !row.account_id) continue;
+  for (const row of txRows ?? []) {
+    if (!row.account_id || !row.import_id) continue;
+    const importedAt = importedAtById.get(row.import_id);
+    if (!importedAt) continue;
     const previous = uploadByAccountId.get(row.account_id);
     if (!previous || importedAt > previous) {
       uploadByAccountId.set(row.account_id, importedAt);

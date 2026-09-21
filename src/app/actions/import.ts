@@ -26,6 +26,7 @@ import {
 import { spendingCategories } from "@/lib/categories/helpers";
 import {
   generateTransactionFingerprint,
+  isImportDuplicateDespiteDateShift,
   normalizeDescription,
 } from "@/lib/categorization/normalize";
 import { monthsCoveredByDates } from "@/lib/import/statement-months";
@@ -377,14 +378,20 @@ export async function processImport(
 
     importIds.push(importRecord.id);
 
-    const { data: existingFingerprints } = await supabase
+    const { data: existingTransactions } = await supabase
       .from("transactions")
-      .select("fingerprint")
+      .select("fingerprint, account_id, amount, normalized_description, transaction_date")
       .eq("user_id", user.id);
 
     const existingSet = new Set(
-      (existingFingerprints ?? []).map((t: { fingerprint: string }) => t.fingerprint)
+      (existingTransactions ?? []).map((t: { fingerprint: string }) => t.fingerprint)
     );
+    const existingForDateShiftDedupe = (existingTransactions ?? []) as Array<{
+      account_id: string;
+      amount: number;
+      normalized_description: string;
+      transaction_date: string;
+    }>;
 
     const toInsert: TransactionInsert[] = [];
 
@@ -400,7 +407,30 @@ export async function processImport(
         referenceNumber: tx.reference_number,
       });
 
+      const incomingFields = {
+        accountId,
+        amount: tx.amount,
+        normalizedDescription: normalized,
+        transactionDate: tx.transaction_date,
+      };
+
       if (existingSet.has(fingerprint)) {
+        totalSkipped++;
+        continue;
+      }
+
+      const shiftedDuplicate = existingForDateShiftDedupe.some((row) =>
+        isImportDuplicateDespiteDateShift(
+          {
+            accountId: row.account_id,
+            amount: row.amount,
+            normalizedDescription: row.normalized_description,
+            transactionDate: row.transaction_date,
+          },
+          incomingFields
+        )
+      );
+      if (shiftedDuplicate) {
         totalSkipped++;
         continue;
       }
