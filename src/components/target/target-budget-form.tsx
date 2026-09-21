@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { updateBudgets } from "@/app/actions/settings";
+import { updateAnnualBudgets, updateBudgets } from "@/app/actions/settings";
 import { CategoryChip, PrimaryButton, SurfaceCard } from "@/components/ui/surface";
 import { formatMoney } from "@/lib/design/format";
 import { getCategoryVisual } from "@/lib/design/theme";
@@ -30,15 +30,16 @@ function categoryProgress(row: Pick<TargetRow, "budget" | "actual">) {
   return { hasBudget, pct, over, left };
 }
 
-export function TargetBudgetForm({
-  data,
-  month,
-  monthLabel,
-}: {
+type TargetBudgetFormProps = {
   data: TargetRow[];
-  month: string;
-  monthLabel: string;
-}) {
+  periodLabel: string;
+} & (
+  | { periodType: "month"; month: string }
+  | { periodType: "year"; year: number }
+);
+
+export function TargetBudgetForm(props: TargetBudgetFormProps) {
+  const { data, periodLabel, periodType } = props;
   const [isPending, startTransition] = useTransition();
 
   return (
@@ -53,12 +54,16 @@ export function TargetBudgetForm({
             })
             .filter((row): row is { categoryId: string; budgetAmount: number } => row !== null);
 
-          const result = await updateBudgets(month, budgets);
+          const result =
+            periodType === "year"
+              ? await updateAnnualBudgets(props.year, budgets)
+              : await updateBudgets(props.month, budgets);
+
           if (result.error) {
             toast.error(result.error);
             return;
           }
-          toast.success(`${monthLabel} target saved`);
+          toast.success(`${periodLabel} target saved`);
         });
       }}
       className="space-y-6"
@@ -116,7 +121,7 @@ export function TargetBudgetForm({
                     name={row.categoryId}
                     type="number"
                     min={0}
-                    step={10}
+                    step={periodType === "year" ? 50 : 10}
                     defaultValue={row.budget}
                     aria-label={`${row.name} target`}
                     className="w-[3.75rem] rounded-[10px] border border-[#E2DEF0] bg-[#FAF9FC] px-1.5 py-1.5 text-right text-xs font-bold outline-none focus:border-[#6C3FD1]"
@@ -129,7 +134,7 @@ export function TargetBudgetForm({
       </SurfaceCard>
 
       <PrimaryButton type="submit" disabled={isPending} className="w-full sm:w-auto">
-        {isPending ? "Saving..." : `Save ${monthLabel} target`}
+        {isPending ? "Saving..." : `Save ${periodLabel} target`}
       </PrimaryButton>
     </form>
   );

@@ -12,70 +12,128 @@ export interface TargetPlanSummaryData {
   targetToSpend: number;
   budgetGap: number;
   hasOwnBudgets: boolean;
+  spentYtd?: number;
+}
+
+function SummaryRow({
+  label,
+  value,
+  tone = "default",
+  emphasis = false,
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "accent" | "danger";
+  emphasis?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-[13px] font-semibold text-[#6E6B82]">{label}</span>
+      <span
+        className={cn(
+          "font-bold tabular-nums",
+          emphasis ? "text-base font-extrabold" : "text-sm",
+          tone === "accent" && "text-[#6C3FD1]",
+          tone === "danger" && "text-[#EF4444]",
+          tone === "default" && "text-[#1C1B29]"
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
 }
 
 export function TargetPlanSummary({
-  monthLabel,
+  periodLabel,
+  periodType,
   summary,
 }: {
-  monthLabel: string;
+  periodLabel: string;
+  periodType: "month" | "year";
   summary: TargetPlanSummaryData;
 }) {
   const overBudget = summary.budgetGap > 0;
   const underBudget = summary.budgetGap < 0;
+  const isYear = periodType === "year";
+  const spentYtd = summary.spentYtd ?? 0;
+  const spentOverTarget =
+    isYear && summary.targetToSpend > 0 && spentYtd > summary.targetToSpend;
+  const spentLeft =
+    isYear && summary.targetToSpend > 0
+      ? summary.targetToSpend - spentYtd
+      : null;
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[
-          { label: "Expected income", value: formatMoney(summary.expectedIncome) },
-          { label: "Room to spend", value: formatMoney(summary.roomToSpend) },
-          { label: "Category target", value: formatMoney(summary.targetToSpend), warn: overBudget },
-          {
-            label: "Goal to save",
-            value: formatMoney(summary.goalToSave),
-            sub: formatPercent(summary.savingsPercent / 100),
-            accent: true,
-          },
-        ].map((card) => (
-          <SurfaceCard key={card.label} className="px-4 py-3.5">
-            <p className="text-[12px] font-semibold text-[#6E6B82]">{card.label}</p>
-            {"sub" in card && card.sub ? (
-              <p className="mt-1 text-[11px] font-bold text-[#9E9AB0]">{card.sub}</p>
-            ) : null}
-            <p
-              className={cn(
-                "mt-1 text-lg font-extrabold",
-                card.accent && "text-[#6C3FD1]",
-                card.warn && "text-[#EF4444]"
-              )}
-            >
-              {card.value}
-            </p>
-          </SurfaceCard>
-        ))}
-      </div>
+    <div className="space-y-2">
+      <SurfaceCard className="px-5 py-4">
+        <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
+          Plan · {periodLabel}
+        </p>
 
-      {overBudget && (
-        <p className="text-xs font-semibold text-[#B91C1C]">
-          Category targets are {formatMoney(summary.budgetGap)} above room to spend.
-        </p>
-      )}
-      {underBudget && summary.targetToSpend > 0 && (
-        <p className="text-xs font-semibold text-[#6C3FD1]">
-          {formatMoney(Math.abs(summary.budgetGap))} unallocated vs room to spend.
-        </p>
-      )}
+        <div className="space-y-2">
+          <SummaryRow
+            label={isYear ? "Expected income (year)" : "Expected income"}
+            value={formatMoney(summary.expectedIncome)}
+          />
+          <SummaryRow
+            label={`Goal to save (${formatPercent(summary.savingsPercent / 100)})`}
+            value={`− ${formatMoney(summary.goalToSave)}`}
+            tone="accent"
+          />
+
+          <div className="border-t border-[#F1EFF7] pt-2">
+            <SummaryRow
+              label={isYear ? "Room to spend (year)" : "Room to spend"}
+              value={formatMoney(summary.roomToSpend)}
+              emphasis
+            />
+          </div>
+
+          <SummaryRow
+            label={isYear ? "Category target (year)" : "Category target"}
+            value={formatMoney(summary.targetToSpend)}
+            tone={overBudget ? "danger" : "default"}
+          />
+
+          {isYear && (
+            <SummaryRow
+              label="Spent YTD"
+              value={
+                summary.targetToSpend > 0 && spentLeft !== null
+                  ? spentOverTarget
+                    ? `${formatMoney(spentYtd)} · ${formatMoney(Math.abs(spentLeft))} over`
+                    : `${formatMoney(spentYtd)} · ${formatMoney(spentLeft)} left`
+                  : formatMoney(spentYtd)
+              }
+              tone={spentOverTarget ? "danger" : "default"}
+            />
+          )}
+        </div>
+
+        {overBudget && (
+          <p className="mt-3 text-xs font-semibold text-[#B91C1C]">
+            Category targets are {formatMoney(summary.budgetGap)} above room to spend.
+          </p>
+        )}
+        {underBudget && summary.targetToSpend > 0 && (
+          <p className="mt-3 text-xs font-semibold text-[#6C3FD1]">
+            {formatMoney(Math.abs(summary.budgetGap))} unallocated vs room to spend.
+          </p>
+        )}
+      </SurfaceCard>
 
       <p className="text-xs font-semibold text-[#6E6B82]">
-        Income and savings rate in{" "}
+        Income and savings in{" "}
         <Link href="/settings?section=general" className="font-bold text-[#6C3FD1]">
           Settings
         </Link>
         .{" "}
         {!summary.hasOwnBudgets
-          ? `${monthLabel} has no saved target yet — values below are copied from your latest plan.`
-          : `Editing ${monthLabel}.`}
+          ? isYear
+            ? `No saved annual plan for ${periodLabel} — targets below are estimated from monthly plans.`
+            : `No saved plan for ${periodLabel} — targets below copy your latest monthly plan.`
+          : null}
       </p>
     </div>
   );

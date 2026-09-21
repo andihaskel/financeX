@@ -25,7 +25,7 @@ export const appNavItems: {
     href: "/target",
     label: "Targets",
     icon: LineChart,
-    match: ["/target", "/plan", "/budget"],
+    match: ["/target", "/target/annual", "/plan", "/budget"],
   },
 ];
 

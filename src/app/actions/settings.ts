@@ -128,8 +128,37 @@ export async function updateBudgets(
   if (error) return { error: error.message };
 
   revalidatePath("/target");
+  revalidatePath("/target/annual");
   revalidatePath("/home");
   revalidatePath("/month");
+  return { success: true };
+}
+
+export async function updateAnnualBudgets(
+  year: number,
+  budgets: { categoryId: string; budgetAmount: number }[]
+) {
+  const user = await getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
+  const rows = budgets.map((row) => ({
+    user_id: user.id,
+    year,
+    category_id: row.categoryId,
+    budget_amount: row.budgetAmount,
+    currency: "USD" as Currency,
+  }));
+
+  const { error } = await supabase.from("annual_budgets").upsert(rows, {
+    onConflict: "user_id,category_id,year",
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/target/annual");
+  revalidatePath("/target");
+  revalidatePath("/home");
   return { success: true };
 }
 

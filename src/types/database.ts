@@ -138,6 +138,15 @@ export interface MonthlyBudget {
   currency: Currency;
 }
 
+export interface AnnualBudget {
+  id: string;
+  user_id: string;
+  year: number;
+  category_id: string;
+  budget_amount: number;
+  currency: Currency;
+}
+
 export interface Commitment {
   id: string;
   user_id: string;
@@ -387,6 +396,26 @@ export interface Database {
           user_id?: string;
           category_id?: string;
           month?: string;
+          budget_amount?: number;
+          currency?: Currency;
+        };
+        Relationships: [];
+      };
+      annual_budgets: {
+        Row: AnnualBudget;
+        Insert: {
+          id?: string;
+          user_id: string;
+          year: number;
+          category_id: string;
+          budget_amount: number;
+          currency?: Currency;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          year?: number;
+          category_id?: string;
           budget_amount?: number;
           currency?: Currency;
         };

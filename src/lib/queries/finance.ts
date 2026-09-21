@@ -17,7 +17,10 @@ import {
 } from "@/lib/accounting/calculations";
 import { dedupeAccounts, sortAccounts } from "@/lib/accounts/helpers";
 import { spendingCategories } from "@/lib/categories/helpers";
-import { buildMonthRefundLinkPool } from "@/lib/queries/refund-link-pool";
+import {
+  buildMonthRefundLinkPool,
+  fetchYearTransactionsWithRefundLinks,
+} from "@/lib/queries/refund-link-pool";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type { Account, Category, Import, Transaction, UserSettings } from "@/types/database";
 
@@ -336,6 +339,213 @@ export async function getTargetSummary(month: string) {
     budgetGap,
     hasOwnBudgets: (ownBudgetsResult.count ?? 0) > 0,
   };
+}
+
+async function resolveAnnualBudgetAmountsForYear(
+  supabase: BudgetClient,
+  userId: string,
+  year: number
+): Promise<Map<string, number>> {
+  const { data: annualBudgets } = await supabase
+    .from("annual_budgets")
+    .select("category_id, budget_amount")
+    .eq("user_id", userId)
+    .eq("year", year);
+
+  if (annualBudgets && annualBudgets.length > 0) {
+    return new Map(
+      annualBudgets.map((b: { category_id: string; budget_amount: number }) => [
+        b.category_id,
+        Number(b.budget_amount),
+      ])
+    );
+  }
+
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+  const { data: monthlyInYear } = await supabase
+    .from("monthly_budgets")
+    .select("category_id, budget_amount")
+    .eq("user_id", userId)
+    .gte("month", yearStart)
+    .lte("month", yearEnd);
+
+  if (monthlyInYear && monthlyInYear.length > 0) {
+    const totals = new Map<string, number>();
+    for (const row of monthlyInYear) {
+      totals.set(
+        row.category_id,
+        (totals.get(row.category_id) ?? 0) + Number(row.budget_amount)
+      );
+    }
+    return totals;
+  }
+
+  const monthlyFallback = await resolveBudgetAmountsForMonth(
+    supabase,
+    userId,
+    `${year}-01-01`
+  );
+  const scaled = new Map<string, number>();
+  for (const [categoryId, amount] of monthlyFallback.entries()) {
+    scaled.set(categoryId, amount * 12);
+  }
+  return scaled;
+}
+
+export async function getAnnualTargetBudgets(year: number) {
+  const user = await getUser();
+  if (!user) return [];
+
+  const supabase = await createClient();
+  const [{ data: categories }, budgetMap] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("id, name, slug, group")
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .order("name"),
+    resolveAnnualBudgetAmountsForYear(supabase, user.id, year),
+  ]);
+
+  return spendingCategories(categories ?? []).map(
+    (cat: { id: string; name: string; slug: string }) => ({
+      categoryId: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      budget: budgetMap.get(cat.id) ?? 0,
+    })
+  );
+}
+
+export async function getAnnualTargetSummary(year: number) {
+  const user = await getUser();
+  if (!user) {
+    return {
+      expectedIncome: 0,
+      targetToSpend: 0,
+      goalToSave: 0,
+      savingsPercent: 40,
+      roomToSpend: 0,
+      budgetGap: 0,
+      hasOwnBudgets: false,
+      spentYtd: 0,
+    };
+  }
+
+  const supabase = await createClient();
+  const start = `${year}-01-01`;
+  const end = `${year}-12-31`;
+
+  const [incomeResult, settingsResult, budgetData, ownBudgetsResult, linkPool] =
+    await Promise.all([
+      supabase
+        .from("income_sources")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("active", true),
+      supabase.from("user_settings").select("*").eq("user_id", user.id).single(),
+      getAnnualTargetBudgets(year),
+      supabase
+        .from("annual_budgets")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("year", year),
+      fetchYearTransactionsWithRefundLinks(supabase, user.id, year),
+    ]);
+
+  const uyuRate = settingsResult.data?.uyu_to_usd_rate ?? 40;
+  const savingsPercent = settingsResult.data?.savings_target_percent ?? 40;
+
+  const monthlyIncome = (incomeResult.data ?? []).reduce((sum, source) => {
+    return (
+      sum + convertToUsd(source.expected_monthly_amount, source.currency, uyuRate)
+    );
+  }, 0);
+
+  const expectedIncome = monthlyIncome * 12;
+  const targetToSpend = budgetData.reduce((sum, row) => sum + row.budget, 0);
+  const goalToSave = expectedIncome * (savingsPercent / 100);
+  const roomToSpend = expectedIncome - goalToSave;
+  const budgetGap = targetToSpend - roomToSpend;
+
+  const yearTransactions = linkPool.filter(
+    (tx) => tx.transaction_date >= start && tx.transaction_date <= end
+  );
+  let spentYtd = 0;
+  for (let i = 1; i <= 12; i++) {
+    const month = `${year}-${String(i).padStart(2, "0")}`;
+    const monthTx = yearTransactions.filter((tx) =>
+      tx.transaction_date.startsWith(`${month}-`)
+    );
+    spentYtd += calculateAttributedTotalSpending(month, monthTx, linkPool, uyuRate);
+  }
+
+  return {
+    expectedIncome,
+    targetToSpend,
+    goalToSave,
+    savingsPercent,
+    roomToSpend,
+    budgetGap,
+    hasOwnBudgets: (ownBudgetsResult.count ?? 0) > 0,
+    spentYtd,
+  };
+}
+
+export async function getAnnualBudgetComparison(year: number) {
+  const user = await getUser();
+  if (!user) return [];
+
+  const supabase = await createClient();
+  const start = `${year}-01-01`;
+  const end = `${year}-12-31`;
+
+  const [{ data: categories }, settings, budgetMap, linkPool] = await Promise.all([
+    supabase.from("categories").select("*").eq("user_id", user.id).eq("active", true),
+    getUserSettings(),
+    resolveAnnualBudgetAmountsForYear(supabase, user.id, year),
+    fetchYearTransactionsWithRefundLinks(supabase, user.id, year),
+  ]);
+
+  const uyuRate = settings?.uyu_to_usd_rate ?? 40;
+  const transactions = linkPool.filter(
+    (tx) => tx.transaction_date >= start && tx.transaction_date <= end
+  );
+  const categoryById = new Map((categories ?? []).map((c) => [c.id, c]));
+
+  const actualMap = new Map<string, number>();
+  for (let i = 1; i <= 12; i++) {
+    const month = `${year}-${String(i).padStart(2, "0")}`;
+    const monthTx = transactions.filter((tx) => tx.transaction_date.startsWith(`${month}-`));
+    for (const row of groupAttributedSpendingByCategory(
+      month,
+      monthTx,
+      linkPool,
+      (categories ?? []) as Category[],
+      uyuRate
+    )) {
+      actualMap.set(row.categoryId, (actualMap.get(row.categoryId) ?? 0) + row.amount);
+    }
+  }
+
+  const categoryIds = new Set<string>([...actualMap.keys(), ...budgetMap.keys()]);
+
+  return Array.from(categoryIds)
+    .map((categoryId) => {
+      const category = categoryById.get(categoryId);
+      return {
+        categoryId,
+        name: category?.name ?? "Unknown",
+        slug: category?.slug ?? "otros",
+        group: category?.group,
+        budget: budgetMap.get(categoryId) ?? 0,
+        actual: actualMap.get(categoryId) ?? 0,
+      };
+    })
+    .filter((row) => row.group !== "income")
+    .filter((row) => row.actual > 0 || row.budget > 0)
+    .sort((a, b) => b.actual - a.actual);
 }
 
 export async function getMonthlyTrend(currentMonth: string) {
