@@ -10,7 +10,7 @@ import {
   categoriesForTransactionType,
   typeNeedsCategory,
 } from "@/lib/categories/helpers";
-import { getReturnLabel, safeReturnPath } from "@/lib/navigation/return-to";
+import { getMovementsBackTarget } from "@/lib/navigation/return-to";
 import type { Account, Category, TransactionType } from "@/types/database";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +46,6 @@ export function MovementsFilters({
   categories,
   filters,
   onFilterChange,
-  from,
 }: {
   month: string;
   year?: string;
@@ -54,12 +53,12 @@ export function MovementsFilters({
   categories: Category[];
   filters: MovementsFilterValues;
   onFilterChange: (key: keyof MovementsFilterValues, value: string) => void;
-  from?: string;
 }) {
   const searchParams = useSearchParams();
   const viewingYear = Boolean(year);
-  const returnPath = safeReturnPath(from);
-  const returnLabel = returnPath ? getReturnLabel(returnPath) : null;
+  const backTarget = getMovementsBackTarget(
+    viewingYear ? { year } : { month }
+  );
 
   const selectedType = (filters.type ?? "") as TransactionType | "";
   const categoryOptions =
@@ -76,12 +75,12 @@ export function MovementsFilters({
 
   return (
     <div className="space-y-3.5">
-      {returnPath && returnLabel && (
+      {backTarget && (
         <Link
-          href={returnPath}
+          href={backTarget.href}
           className="inline-flex items-center text-sm font-bold text-[#6E6B82] transition-colors hover:text-[#6C3FD1]"
         >
-          ‹ {returnLabel}
+          ‹ {backTarget.label}
         </Link>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
@@ -100,6 +99,7 @@ export function MovementsFilters({
                 );
                 params.set("month", m);
                 params.delete("year");
+                params.delete("from");
                 params.delete("show");
                 params.delete("page");
                 params.delete("limit");

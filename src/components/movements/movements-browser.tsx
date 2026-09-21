@@ -41,12 +41,11 @@ function filtersFromInitial(initial: Record<string, string | undefined>): Moveme
 
 function syncFiltersToUrl(
   filters: MovementsFilterValues,
-  base: { month?: string; year?: string; from?: string }
+  base: { month?: string; year?: string }
 ) {
   const params = new URLSearchParams();
   if (base.year) params.set("year", base.year);
   if (base.month) params.set("month", base.month);
-  if (base.from) params.set("from", base.from);
   if (filters.account) params.set("account", filters.account);
   if (filters.category) params.set("category", filters.category);
   if (filters.type) params.set("type", filters.type);
@@ -128,7 +127,6 @@ export function MovementsBrowser({
       syncFiltersToUrl(next, {
         month: year ? undefined : month,
         year,
-        from: initialFilters.from,
       });
       return next;
     });
@@ -165,7 +163,6 @@ export function MovementsBrowser({
         categories={categories}
         filters={filters}
         onFilterChange={onFilterChange}
-        from={initialFilters.from}
       />
 
       {filtered.length === 0 ? (

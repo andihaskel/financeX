@@ -50,3 +50,21 @@ export function getReturnLabel(from: string): string {
 
   return "Back";
 }
+
+export function getMovementsBackTarget(options: {
+  month?: string;
+  year?: string;
+}): { href: string; label: string } | null {
+  if (options.year && /^\d{4}$/.test(options.year)) {
+    return { href: `/home?year=${options.year}`, label: options.year };
+  }
+
+  if (options.month && /^\d{4}-\d{2}$/.test(options.month)) {
+    return {
+      href: `/month/${options.month}`,
+      label: format(parseISO(`${options.month}-01`), "MMMM yyyy"),
+    };
+  }
+
+  return null;
+}
