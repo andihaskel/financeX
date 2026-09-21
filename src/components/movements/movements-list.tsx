@@ -507,7 +507,10 @@ function MovementRow({
   return (
     <div className="flex items-center gap-3.5 border-b border-[#F1EFF7] py-4 last:border-0">
       <CategoryChip emoji={visual.emoji} color={visual.chipColor} />
-      <div className="min-w-0 flex-1">
+      <div
+        className="min-w-0 flex-1"
+        title={`${tx.description}\n${format(parseISO(tx.transaction_date), "MMM d")} · ${label} · ${accountName}`}
+      >
         <p className="truncate text-sm font-bold">{tx.description}</p>
         <p className="mt-1 truncate text-xs font-semibold text-[#6E6B82]">
           {format(parseISO(tx.transaction_date), "MMM d")} · {label} · {accountName}
