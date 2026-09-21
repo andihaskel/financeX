@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deletePeriodTransactions } from "@/app/actions/transactions";
@@ -65,11 +66,12 @@ function DeleteAccountDataButton({
         render={
           <button
             type="button"
-            className="shrink-0 text-[13px] font-bold text-[#EF4444] transition-opacity hover:opacity-80"
+            aria-label={`Delete ${account.name} data for ${monthLabel}`}
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-[#9E9AB0] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444]"
           />
         }
       >
-        Delete {monthLabel} data
+        <Trash2 className="size-4" />
       </DialogTrigger>
       <DialogContent className="rounded-[26px] border-[#F1EFF7] sm:max-w-md">
         <DialogHeader>
