@@ -199,7 +199,7 @@ function MovementFormFields({
   const canBeExtraordinary = editType === "expense" || editType === "refund";
 
   return (
-    <div className="space-y-4 py-1">
+    <div className="space-y-3 py-1">
       {showDescriptionAmount && setEditDescription && setEditAmount && (
         <>
           <div>
@@ -294,30 +294,32 @@ function MovementFormFields({
       {needsCategory && (
         <div>
           <p className="mb-2 text-[13px] font-semibold text-[#6E6B82]">Category</p>
-          <div className="flex flex-wrap gap-2">
-            {categoriesForTransactionType(categories, editType).map((category) => {
-              const catVisual = getCategoryVisual(category.slug);
-              const active = editCategoryId === category.id;
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => {
-                    setEditCategoryId(category.id);
-                    if (category.group === "extraordinary") {
-                      setEditExtraordinary(true);
-                    }
-                  }}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
-                    active ? "text-white" : "bg-[#F3F1F9] text-[#1C1B29]"
-                  )}
-                  style={active ? { backgroundColor: catVisual.chipColor } : undefined}
-                >
-                  {category.name}
-                </button>
-              );
-            })}
+          <div className="max-h-32 overflow-y-auto">
+            <div className="flex flex-wrap gap-2">
+              {categoriesForTransactionType(categories, editType).map((category) => {
+                const catVisual = getCategoryVisual(category.slug);
+                const active = editCategoryId === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setEditCategoryId(category.id);
+                      if (category.group === "extraordinary") {
+                        setEditExtraordinary(true);
+                      }
+                    }}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
+                      active ? "text-white" : "bg-[#F3F1F9] text-[#1C1B29]"
+                    )}
+                    style={active ? { backgroundColor: catVisual.chipColor } : undefined}
+                  >
+                    {category.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -539,49 +541,53 @@ function MovementRow({
           if (!open) closeModal();
         }}
       >
-        <DialogContent className="rounded-[26px] border-[#F1EFF7] sm:max-w-md">
-          {modalMode === "duplicate" && (
-            <button
-              type="button"
-              onClick={() => setModalMode("edit")}
-              className="mb-1 text-left text-[13px] font-semibold text-[#6E6B82]"
-            >
-              ← Back to edit
-            </button>
-          )}
+        <DialogContent className="fixed top-[max(1rem,env(safe-area-inset-top))] left-1/2 flex max-h-[min(90dvh,calc(100%-2rem))] -translate-x-1/2 translate-y-0 flex-col gap-0 overflow-hidden rounded-[26px] border-[#F1EFF7] p-0 sm:max-w-md">
+          <div className="shrink-0 border-b border-[#F1EFF7] px-6 pb-4 pt-6">
+            {modalMode === "duplicate" && (
+              <button
+                type="button"
+                onClick={() => setModalMode("edit")}
+                className="mb-2 text-left text-[13px] font-semibold text-[#6E6B82]"
+              >
+                ← Back to edit
+              </button>
+            )}
 
-          <DialogHeader>
-            <DialogTitle className="text-[20px] font-extrabold">
-              {modalMode === "duplicate" ? "Duplicate movement" : "Edit movement"}
-            </DialogTitle>
-            <DialogDescription className="text-sm font-semibold text-[#6E6B82]">
-              {modalMode === "duplicate"
-                ? "Create a copy with the details below. Change the date or amount if it already exists."
-                : tx.description}
-            </DialogDescription>
-          </DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="text-[20px] font-extrabold">
+                {modalMode === "duplicate" ? "Duplicate movement" : "Edit movement"}
+              </DialogTitle>
+              <DialogDescription className="text-sm font-semibold text-[#6E6B82]">
+                {modalMode === "duplicate"
+                  ? "Adjust the copy before saving."
+                  : tx.description}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          <MovementFormFields
-            editDate={editDate}
-            setEditDate={setEditDate}
-            editType={editType}
-            setEditType={setEditType}
-            editCategoryId={editCategoryId}
-            setEditCategoryId={setEditCategoryId}
-            editExtraordinary={editExtraordinary}
-            setEditExtraordinary={setEditExtraordinary}
-            categories={categories}
-            isPending={isPending}
-            showDescriptionAmount={modalMode === "duplicate"}
-            editDescription={editDescription}
-            setEditDescription={setEditDescription}
-            editAmount={editAmount}
-            setEditAmount={setEditAmount}
-            currency={tx.currency}
-            accountName={accountName}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <MovementFormFields
+              editDate={editDate}
+              setEditDate={setEditDate}
+              editType={editType}
+              setEditType={setEditType}
+              editCategoryId={editCategoryId}
+              setEditCategoryId={setEditCategoryId}
+              editExtraordinary={editExtraordinary}
+              setEditExtraordinary={setEditExtraordinary}
+              categories={categories}
+              isPending={isPending}
+              showDescriptionAmount={modalMode === "duplicate"}
+              editDescription={editDescription}
+              setEditDescription={setEditDescription}
+              editAmount={editAmount}
+              setEditAmount={setEditAmount}
+              currency={tx.currency}
+              accountName={accountName}
+            />
+          </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="shrink-0 gap-2 border-t border-[#F1EFF7] px-6 pb-6 pt-4 sm:gap-2">
             <button
               type="button"
               onClick={closeModal}
