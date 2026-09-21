@@ -33,8 +33,8 @@ export interface MonthDataAccountRow {
 }
 
 function lastUploadLabel(iso: string | null) {
-  if (!iso) return "No file uploaded yet";
-  return `Last upload · ${format(parseISO(iso), "MMM d, yyyy")}`;
+  if (!iso) return "No file uploaded this month";
+  return `Last upload this month · ${format(parseISO(iso), "MMM d, yyyy")}`;
 }
 
 function AccountActionIcon({

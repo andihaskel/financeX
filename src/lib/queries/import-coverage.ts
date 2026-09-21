@@ -2,8 +2,11 @@ import { format, parseISO } from "date-fns";
 
 import {
   dedupeAccounts,
+  getAccountBucket,
   getAccountDisplayName,
   getAccountShortLabel,
+  isBankAccountType,
+  isCreditCardType,
 } from "@/lib/accounts/helpers";
 import { getMonthDateRange } from "@/components/dashboard/month-nav";
 import { getActiveAccounts } from "@/lib/queries/finance";
@@ -52,25 +55,67 @@ export function buildMonthImportCoverage(
   };
 }
 
-/** Latest file upload (`imports.imported_at`) per account, most recent first. */
-export async function getLastImportUploadByAccount(
+/**
+ * Latest file upload in `month` per canonical account row (UYU / USD / card bucket).
+ * Only counts imports that actually added movements dated in that month.
+ */
+export async function getLastImportUploadForMonthByCanonicalAccount(
   userId: string,
-  accountIds: string[]
+  month: string,
+  allAccounts: Account[]
 ): Promise<Map<string, string>> {
+  const canonicalAccounts = dedupeAccounts(allAccounts);
   const map = new Map<string, string>();
-  if (accountIds.length === 0) return map;
+  if (canonicalAccounts.length === 0) return map;
 
+  const idsByBucket = new Map<
+    ReturnType<typeof getAccountBucket>,
+    string[]
+  >();
+  for (const account of allAccounts) {
+    if (account.active === false) continue;
+    if (!isBankAccountType(account.type) && !isCreditCardType(account.type)) {
+      continue;
+    }
+    const bucket = getAccountBucket(account);
+    const ids = idsByBucket.get(bucket) ?? [];
+    ids.push(account.id);
+    idsByBucket.set(bucket, ids);
+  }
+
+  const { start, end } = getMonthDateRange(month);
   const supabase = await createClient();
   const { data } = await supabase
-    .from("imports")
-    .select("account_id, imported_at")
+    .from("transactions")
+    .select("account_id, imports!inner(imported_at)")
     .eq("user_id", userId)
-    .in("account_id", accountIds)
-    .order("imported_at", { ascending: false });
+    .gte("transaction_date", start)
+    .lte("transaction_date", end)
+    .not("import_id", "is", null);
 
+  const uploadByAccountId = new Map<string, string>();
   for (const row of data ?? []) {
-    if (!row.account_id || map.has(row.account_id)) continue;
-    map.set(row.account_id, row.imported_at);
+    const importedAt = (row.imports as { imported_at: string } | null)?.imported_at;
+    if (!importedAt || !row.account_id) continue;
+    const previous = uploadByAccountId.get(row.account_id);
+    if (!previous || importedAt > previous) {
+      uploadByAccountId.set(row.account_id, importedAt);
+    }
+  }
+
+  for (const canonical of canonicalAccounts) {
+    const bucket = getAccountBucket(canonical);
+    const accountIds = idsByBucket.get(bucket) ?? [canonical.id];
+    let best: string | null = null;
+    for (const accountId of accountIds) {
+      const importedAt = uploadByAccountId.get(accountId);
+      if (importedAt && (!best || importedAt > best)) {
+        best = importedAt;
+      }
+    }
+    if (best) {
+      map.set(canonical.id, best);
+    }
   }
 
   return map;

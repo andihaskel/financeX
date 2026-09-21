@@ -6,7 +6,6 @@ import { OpenImportButton } from "@/components/home/open-import-button";
 import { AddMovementsButton } from "@/components/layout/floating-add-button";
 import { MonthDataPanel } from "@/components/month/month-data-panel";
 import { MonthEmptyHeader, MonthPageHeader } from "@/components/month/month-page-header";
-import { MissingImportBadge } from "@/components/accounts/missing-import-badge";
 import { BudgetCategoryList } from "@/components/spending/category-spending-list";
 import { SpendingBreakdown } from "@/components/spending/spending-breakdown";
 import { accountDotColor } from "@/lib/accounts/dot-color";
@@ -28,7 +27,7 @@ import {
   getDashboardMetrics,
   getMonthTransactions,
 } from "@/lib/queries/finance";
-import { buildMonthImportCoverage, getLastImportUploadByAccount } from "@/lib/queries/import-coverage";
+import { buildMonthImportCoverage, getLastImportUploadForMonthByCanonicalAccount } from "@/lib/queries/import-coverage";
 import { getUser } from "@/lib/supabase/server";
 import { ImportCoveragePanel } from "@/components/accounts/import-coverage";
 
@@ -62,9 +61,10 @@ export default async function MonthPage({
     accounts,
     new Set(transactions.map((transaction) => transaction.account_id))
   );
-  const lastUploadByAccount = await getLastImportUploadByAccount(
+  const lastUploadByAccount = await getLastImportUploadForMonthByCanonicalAccount(
     user.id,
-    importCoverage.accounts.map((account) => account.id)
+    month,
+    accounts
   );
 
   function monthDataAccounts() {
@@ -150,7 +150,6 @@ export default async function MonthPage({
         <p className="mb-2 text-[15px] font-semibold opacity-85">
           How did {monthNameOnly} go?
         </p>
-        <MissingImportBadge month={month} accounts={importCoverage.accounts} />
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
           <Link
             href={buildMovementsHref({
