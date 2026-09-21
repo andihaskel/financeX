@@ -2,7 +2,7 @@
 
 import { MonthTitlePicker } from "@/components/shared/month-title-picker";
 
-export function TargetMonthPicker({ month }: { month: string }) {
+export function TargetMonthNav({ month }: { month: string }) {
   return (
     <MonthTitlePicker
       month={month}

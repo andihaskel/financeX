@@ -25,73 +25,57 @@ export function TargetPlanSummary({
   const underBudget = summary.budgetGap < 0;
 
   return (
-    <div className="space-y-4">
-      <SurfaceCard className="px-6 py-5">
-        <p className="text-[13px] font-semibold text-[#6E6B82]">Plan check · {monthLabel}</p>
-        <div className="mt-4 space-y-2.5 text-sm font-semibold">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-[#6E6B82]">Expected income</span>
-            <span className="font-bold text-[#1C1B29]">
-              {formatMoney(summary.expectedIncome)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-[#6E6B82]">
-              Goal to save ({formatPercent(summary.savingsPercent / 100)})
-            </span>
-            <span className="font-bold text-[#6C3FD1]">
-              − {formatMoney(summary.goalToSave)}
-            </span>
-          </div>
-          <div className="border-t border-[#F1EFF7] pt-2.5">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[#1C1B29]">Room to spend</span>
-              <span className="text-lg font-extrabold text-[#1C1B29]">
-                {formatMoney(summary.roomToSpend)}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-[#6E6B82]">Your category target</span>
-            <span
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          { label: "Expected income", value: formatMoney(summary.expectedIncome) },
+          { label: "Room to spend", value: formatMoney(summary.roomToSpend) },
+          { label: "Category target", value: formatMoney(summary.targetToSpend), warn: overBudget },
+          {
+            label: "Goal to save",
+            value: formatMoney(summary.goalToSave),
+            sub: formatPercent(summary.savingsPercent / 100),
+            accent: true,
+          },
+        ].map((card) => (
+          <SurfaceCard key={card.label} className="px-4 py-3.5">
+            <p className="text-[12px] font-semibold text-[#6E6B82]">{card.label}</p>
+            {"sub" in card && card.sub ? (
+              <p className="mt-1 text-[11px] font-bold text-[#9E9AB0]">{card.sub}</p>
+            ) : null}
+            <p
               className={cn(
-                "font-bold",
-                overBudget ? "text-[#EF4444]" : "text-[#1C1B29]"
+                "mt-1 text-lg font-extrabold",
+                card.accent && "text-[#6C3FD1]",
+                card.warn && "text-[#EF4444]"
               )}
             >
-              {formatMoney(summary.targetToSpend)}
-            </span>
-          </div>
-        </div>
+              {card.value}
+            </p>
+          </SurfaceCard>
+        ))}
+      </div>
 
-        {overBudget && (
-          <p className="mt-4 rounded-[12px] bg-[#FEF2F2] px-3.5 py-3 text-xs font-semibold text-[#B91C1C]">
-            Category targets are {formatMoney(summary.budgetGap)} above room to spend. Lower
-            budgets or adjust income / savings in Settings.
-          </p>
-        )}
-        {underBudget && summary.targetToSpend > 0 && (
-          <p className="mt-4 rounded-[12px] bg-[#F3EDFF] px-3.5 py-3 text-xs font-semibold text-[#6C3FD1]">
-            You still have {formatMoney(Math.abs(summary.budgetGap))} unallocated in your
-            spending plan.
-          </p>
-        )}
-        {!overBudget && !underBudget && summary.targetToSpend > 0 && (
-          <p className="mt-4 text-xs font-semibold text-[#6E6B82]">
-            Category targets match your income and savings goal.
-          </p>
-        )}
-      </SurfaceCard>
+      {overBudget && (
+        <p className="text-xs font-semibold text-[#B91C1C]">
+          Category targets are {formatMoney(summary.budgetGap)} above room to spend.
+        </p>
+      )}
+      {underBudget && summary.targetToSpend > 0 && (
+        <p className="text-xs font-semibold text-[#6C3FD1]">
+          {formatMoney(Math.abs(summary.budgetGap))} unallocated vs room to spend.
+        </p>
+      )}
 
       <p className="text-xs font-semibold text-[#6E6B82]">
-        Expected income and savings rate live in{" "}
+        Income and savings rate in{" "}
         <Link href="/settings?section=general" className="font-bold text-[#6C3FD1]">
-          Settings → General
+          Settings
         </Link>
         .{" "}
         {!summary.hasOwnBudgets
-          ? `Showing copied targets — ${monthLabel} has no saved budget yet. Save below to set this month.`
-          : `Targets below apply to ${monthLabel}. Other months use their own saved target, or copy the latest one until set.`}
+          ? `${monthLabel} has no saved target yet — values below are copied from your latest plan.`
+          : `Editing ${monthLabel}.`}
       </p>
     </div>
   );

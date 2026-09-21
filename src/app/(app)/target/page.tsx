@@ -1,8 +1,8 @@
 import { formatMonthLabel } from "@/lib/dates/month";
 import { TargetBudgetForm } from "@/components/target/target-budget-form";
-import { TargetMonthPicker } from "@/components/target/target-month-picker";
+import { TargetMonthNav } from "@/components/target/target-month-nav";
 import { TargetPlanSummary } from "@/components/target/target-plan-summary";
-import { getTargetBudgets, getTargetSummary } from "@/lib/queries/finance";
+import { getTargetBudgets, getTargetSummary, getBudgetComparison } from "@/lib/queries/finance";
 import { resolveViewMonth } from "@/lib/queries/month";
 
 export default async function TargetPage({
@@ -13,23 +13,23 @@ export default async function TargetPage({
   const params = await searchParams;
   const month = await resolveViewMonth(params.month);
   const monthLabel = formatMonthLabel(month);
-  const [budgetData, summary] = await Promise.all([
+  const [budgetData, summary, comparison] = await Promise.all([
     getTargetBudgets(month),
     getTargetSummary(month),
+    getBudgetComparison(month),
   ]);
+  const actualByCategory = new Map(comparison.map((row) => [row.categoryId, row.actual]));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-[26px] font-extrabold">Monthly target</h1>
-          <p className="mt-1.5 max-w-xl text-sm font-semibold text-[#6E6B82]">
-            Set category budgets for {monthLabel}. Each month keeps its own target; months
-            without one copy the latest saved plan until you save here.
-          </p>
-        </div>
-        <TargetMonthPicker month={month} />
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
+        <h1 className="text-[26px] font-extrabold sm:mr-auto">Monthly target</h1>
+        <TargetMonthNav month={month} />
       </div>
+
+      <p className="text-sm font-semibold text-[#6E6B82]">
+        Category budgets for {monthLabel}. Bars show what you spent; edit targets on the right.
+      </p>
 
       <TargetPlanSummary monthLabel={monthLabel} summary={summary} />
 
@@ -41,8 +41,8 @@ export default async function TargetPage({
           name: row.name,
           slug: row.slug,
           budget: row.budget,
+          actual: actualByCategory.get(row.categoryId) ?? 0,
         }))}
-        roomToSpend={summary.roomToSpend}
       />
     </div>
   );
