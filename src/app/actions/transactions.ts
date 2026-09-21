@@ -415,6 +415,7 @@ export async function createManualTransaction(data: {
   transactionType?: TransactionType;
   transactionDate?: string | null;
   currency?: Currency;
+  isExtraordinary?: boolean;
 }) {
   const user = await getUser();
   if (!user) return { error: "Not authenticated" };
@@ -521,7 +522,8 @@ export async function createManualTransaction(data: {
     category_id: needsCategory ? (data.categoryId ?? null) : null,
     excluded_from_spending: excluded,
     is_recurring: false,
-    is_extraordinary: categoryGroup === "extraordinary",
+    is_extraordinary:
+      data.isExtraordinary ?? categoryGroup === "extraordinary",
     categorization_status: "manual",
     categorization_rule_id: null,
   });
