@@ -1,6 +1,7 @@
 import type { Category, Transaction, TransactionType } from "@/types/database";
 
 import { convertToUsd } from "@/lib/currency/convert";
+import { getIncomeInterestAmount } from "@/lib/accounting/income-wealth";
 
 export interface TransactionForAccounting {
   amount: number;
@@ -9,6 +10,7 @@ export interface TransactionForAccounting {
   excluded_from_spending: boolean;
   is_extraordinary: boolean;
   category_id: string | null;
+  income_principal_amount?: number | null;
 }
 
 const SPENDING_TYPES: TransactionType[] = ["expense", "refund"];
@@ -61,10 +63,13 @@ export function calculateIncome(
       (t) =>
         t.transaction_type === "income" && !t.excluded_from_spending
     )
-    .reduce(
-      (total, t) => total + Math.abs(getTransactionUsdAmount(t, uyuToUsdRate)),
-      0
-    );
+    .reduce((total, t) => {
+      const interest = getIncomeInterestAmount({
+        amount: t.amount,
+        income_principal_amount: t.income_principal_amount,
+      });
+      return total + convertToUsd(interest, t.currency, uyuToUsdRate);
+    }, 0);
 }
 
 export function calculateCoreLivingExpenses(

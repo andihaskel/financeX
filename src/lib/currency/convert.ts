@@ -14,6 +14,17 @@ export function convertToUsd(
   return amount / uyuToUsdRate;
 }
 
+export function convertCurrency(
+  amount: number,
+  from: Currency,
+  to: Currency,
+  uyuToUsdRate: number
+): number {
+  if (from === to) return amount;
+  const usd = convertToUsd(amount, from, uyuToUsdRate);
+  return to === "USD" ? usd : usd * uyuToUsdRate;
+}
+
 export function formatCurrency(
   amount: number,
   currency: Currency = "USD",

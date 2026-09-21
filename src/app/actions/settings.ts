@@ -25,7 +25,7 @@ export async function updateSettings(data: {
   revalidatePath("/settings");
   revalidatePath("/home");
   revalidatePath("/movements");
-  revalidatePath("/target");
+  revalidatePath("/target", "layout");
   return { success: true };
 }
 
@@ -49,6 +49,50 @@ export async function createAccount(data: {
   if (error) return { error: error.message };
 
   revalidatePath("/settings");
+  revalidatePath("/wealth");
+  revalidatePath("/movements");
+  revalidatePath("/home");
+  return { success: true };
+}
+
+export async function updateAccountBalance(
+  accountId: string,
+  data: {
+    openingBalance: number | null;
+    openingBalanceDate: string | null;
+  }
+) {
+  const user = await getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (data.openingBalanceDate && !/^\d{4}-\d{2}-\d{2}$/.test(data.openingBalanceDate)) {
+    return { error: "Invalid date" };
+  }
+
+  if (data.openingBalance != null) {
+    if (!Number.isFinite(data.openingBalance)) {
+      return { error: "Balance must be a valid number" };
+    }
+    if (!data.openingBalanceDate) {
+      return { error: "Choose the date for this balance" };
+    }
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("accounts")
+    .update({
+      opening_balance: data.openingBalance,
+      opening_balance_date: data.openingBalanceDate,
+    })
+    .eq("id", accountId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/settings");
+  revalidatePath("/wealth");
+  revalidatePath("/target", "layout");
   return { success: true };
 }
 
@@ -72,7 +116,7 @@ export async function updateCategory(
   revalidatePath("/settings");
   revalidatePath("/home");
   revalidatePath("/movements");
-  revalidatePath("/target");
+  revalidatePath("/target", "layout");
   return { success: true };
 }
 
@@ -99,7 +143,7 @@ export async function updateBudget(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/target");
+  revalidatePath("/target", "layout");
   revalidatePath("/home");
   revalidatePath("/month");
   return { success: true };
@@ -127,8 +171,7 @@ export async function updateBudgets(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/target");
-  revalidatePath("/target/annual");
+  revalidatePath("/target", "layout");
   revalidatePath("/home");
   revalidatePath("/month");
   return { success: true };
@@ -156,8 +199,7 @@ export async function updateAnnualBudgets(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/target/annual");
-  revalidatePath("/target");
+  revalidatePath("/target", "layout");
   revalidatePath("/home");
   return { success: true };
 }
@@ -182,7 +224,7 @@ export async function updateIncomeSource(
   revalidatePath("/settings");
   revalidatePath("/home");
   revalidatePath("/movements");
-  revalidatePath("/target");
+  revalidatePath("/target", "layout");
   return { success: true };
 }
 

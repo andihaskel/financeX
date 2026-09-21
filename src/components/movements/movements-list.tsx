@@ -25,14 +25,24 @@ import { formatTransactionAmount } from "@/lib/design/format";
 import { getAccountDisplayName } from "@/lib/accounts/helpers";
 import { getCategoryVisual } from "@/lib/design/theme";
 import { categoriesForTransactionType } from "@/lib/categories/helpers";
-import type {
-  Account,
-  Category,
-  TransactionType,
-  TransactionWithRelations,
-} from "@/types/database";
+import type { Account, Category, TransactionType, TransactionWithRelations } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { RefundExpenseLinkPicker } from "@/components/movements/refund-expense-link-picker";
+import { IncomeWealthLinkPicker } from "@/components/movements/income-wealth-link-picker";
+import {
+  incomeWealthSummary,
+  resolveIncomeWealthLink,
+} from "@/lib/accounting/income-wealth";
+import {
+  TransferDestinationPicker,
+  type WealthPositionOption,
+} from "@/components/movements/transfer-destination-picker";
+import {
+  decodeTransferDestination,
+  transferDestinationFromTransaction,
+  transferDestinationSummary,
+  type TransferDestinationValue,
+} from "@/lib/wealth/transfer-destination-values";
 
 function groupByDate(transactions: TransactionWithRelations[]) {
   const groups = new Map<string, TransactionWithRelations[]>();
@@ -353,12 +363,14 @@ function MovementRow({
   tx,
   categories,
   accounts,
+  wealthPositions,
   onDeleted,
   onUpdated,
 }: {
   tx: TransactionWithRelations;
   categories: Category[];
   accounts: Account[];
+  wealthPositions: WealthPositionOption[];
   onDeleted: (id: string) => void;
   onUpdated: (next: TransactionWithRelations) => void;
 }) {
@@ -375,9 +387,19 @@ function MovementRow({
   const [editRefundsTransactionId, setEditRefundsTransactionId] = useState(
     tx.refunds_transaction_id ?? ""
   );
+  const [editTransferDestination, setEditTransferDestination] =
+    useState<TransferDestinationValue>(() => transferDestinationFromTransaction(tx));
+  const [editIncomeWealthPositionId, setEditIncomeWealthPositionId] = useState(
+    tx.income_wealth_position_id ?? ""
+  );
+  const [editIncomePrincipalAmount, setEditIncomePrincipalAmount] = useState(
+    tx.income_principal_amount != null ? String(tx.income_principal_amount) : "0"
+  );
 
   const { label, visual } = displayMeta(tx, categories);
   const accountName = tx.accounts ? getAccountDisplayName(tx.accounts) : "Unknown account";
+  const transferSummary = transferDestinationSummary(tx, accounts, wealthPositions);
+  const incomeSummary = incomeWealthSummary(tx, wealthPositions);
   const typeMeta = SPECIAL_TYPES.find((item) => item.type === editType);
   const needsCategory = typeMeta?.needsCategory ?? false;
   const canBeExtraordinary = editType === "expense" || editType === "refund";
@@ -391,6 +413,11 @@ function MovementRow({
     setEditCategoryId(tx.category_id ?? "");
     setEditExtraordinary(tx.is_extraordinary);
     setEditRefundsTransactionId(tx.refunds_transaction_id ?? "");
+    setEditTransferDestination(transferDestinationFromTransaction(tx));
+    setEditIncomeWealthPositionId(tx.income_wealth_position_id ?? "");
+    setEditIncomePrincipalAmount(
+      tx.income_principal_amount != null ? String(tx.income_principal_amount) : "0"
+    );
   }
 
   useEffect(() => {
@@ -413,6 +440,48 @@ function MovementRow({
       ? editExtraordinary || category?.group === "extraordinary"
       : false;
 
+    const transferDestination = decodeTransferDestination(
+      editType === "transfer" ? editTransferDestination : "unset"
+    );
+
+    if (editType === "transfer") {
+      if (
+        transferDestination.kind === "internal_account" &&
+        !transferDestination.accountId
+      ) {
+        toast.error("Choose the destination account");
+        return;
+      }
+      if (
+        transferDestination.kind === "wealth_position" &&
+        !transferDestination.wealthPositionId
+      ) {
+        toast.error("Choose the wealth position");
+        return;
+      }
+    }
+
+    let incomeWealthPositionId: string | null = null;
+    let incomePrincipalAmount: number | null = null;
+
+    if (editType === "income") {
+      const principal = Number(editIncomePrincipalAmount.replace(/,/g, ""));
+      const resolved = resolveIncomeWealthLink({
+        nextType: "income",
+        amount: tx.amount,
+        positionId: editIncomeWealthPositionId || null,
+        principalAmount: editIncomeWealthPositionId ? principal : null,
+      });
+
+      if ("error" in resolved) {
+        toast.error(resolved.error);
+        return;
+      }
+
+      incomeWealthPositionId = resolved.link.income_wealth_position_id;
+      incomePrincipalAmount = resolved.link.income_principal_amount;
+    }
+
     startTransition(async () => {
       const result = await updateTransaction(tx.id, {
         transaction_date: editDate,
@@ -423,6 +492,22 @@ function MovementRow({
         categorization_status: "manual",
         refunds_transaction_id:
           editType === "refund" ? editRefundsTransactionId || null : null,
+        transfer_destination_kind:
+          editType === "transfer" ? transferDestination.kind || null : null,
+        transfer_destination_account_id:
+          editType === "transfer" && transferDestination.kind === "internal_account"
+            ? transferDestination.accountId
+            : null,
+        transfer_destination_wealth_position_id:
+          editType === "transfer" && transferDestination.kind === "wealth_position"
+            ? transferDestination.wealthPositionId
+            : null,
+        ...(editType === "income"
+          ? {
+              income_wealth_position_id: incomeWealthPositionId,
+              income_principal_amount: incomePrincipalAmount,
+            }
+          : {}),
       });
 
       if (result.error) {
@@ -444,6 +529,20 @@ function MovementRow({
         categorization_status: "manual",
         refunds_transaction_id:
           editType === "refund" ? editRefundsTransactionId || null : null,
+        transfer_destination_kind:
+          editType === "transfer" ? transferDestination.kind || null : null,
+        transfer_destination_account_id:
+          editType === "transfer" && transferDestination.kind === "internal_account"
+            ? transferDestination.accountId
+            : null,
+        transfer_destination_wealth_position_id:
+          editType === "transfer" && transferDestination.kind === "wealth_position"
+            ? transferDestination.wealthPositionId
+            : null,
+        income_wealth_position_id:
+          editType === "income" ? incomeWealthPositionId : null,
+        income_principal_amount:
+          editType === "income" ? incomePrincipalAmount : null,
         categories: nextCategory
           ? {
               id: nextCategory.id,
@@ -529,7 +628,13 @@ function MovementRow({
       >
         <p className="truncate text-sm font-bold">{tx.description}</p>
         <p className="mt-1 truncate text-xs font-semibold text-[#6E6B82]">
-          {format(parseISO(tx.transaction_date), "MMM d")} · {label} · {accountName}
+          {format(parseISO(tx.transaction_date), "MMM d")} · {label}
+          {transferSummary
+            ? ` · ${transferSummary}`
+            : incomeSummary
+              ? ` · ${incomeSummary}`
+              : ""}{" "}
+          · {accountName}
         </p>
       </div>
       <p className="shrink-0 text-[15px] font-extrabold">
@@ -605,6 +710,11 @@ function MovementRow({
             accountName={accountName}
             onTypeChange={(type) => {
               if (type !== "refund") setEditRefundsTransactionId("");
+              if (type !== "transfer") setEditTransferDestination("unset");
+              if (type !== "income") {
+                setEditIncomeWealthPositionId("");
+                setEditIncomePrincipalAmount("0");
+              }
             }}
           />
 
@@ -620,6 +730,30 @@ function MovementRow({
               categories={categories}
               disabled={isPending}
               active={modalOpen && editType === "refund"}
+            />
+          )}
+
+          {editType === "transfer" && (
+            <TransferDestinationPicker
+              value={editTransferDestination}
+              onChange={setEditTransferDestination}
+              sourceAccountId={tx.account_id}
+              accounts={accounts}
+              wealthPositions={wealthPositions}
+              disabled={isPending}
+            />
+          )}
+
+          {editType === "income" && (
+            <IncomeWealthLinkPicker
+              wealthPositionId={editIncomeWealthPositionId}
+              principalAmount={editIncomePrincipalAmount}
+              onWealthPositionChange={setEditIncomeWealthPositionId}
+              onPrincipalChange={setEditIncomePrincipalAmount}
+              paymentAmount={tx.amount}
+              paymentCurrency={tx.currency}
+              wealthPositions={wealthPositions}
+              disabled={isPending}
             />
           )}
           </div>
@@ -708,11 +842,13 @@ export function MovementsList({
   transactions,
   categories,
   accounts,
+  wealthPositions,
   groupByDate: shouldGroupByDate = true,
 }: {
   transactions: TransactionWithRelations[];
   categories: Category[];
   accounts: Account[];
+  wealthPositions: WealthPositionOption[];
   groupByDate?: boolean;
 }) {
   const [items, setItems] = useState(transactions);
@@ -728,6 +864,7 @@ export function MovementsList({
         tx={tx}
         categories={categories}
         accounts={accounts}
+        wealthPositions={wealthPositions}
         onDeleted={(id) =>
           setItems((current) => current.filter((item) => item.id !== id))
         }

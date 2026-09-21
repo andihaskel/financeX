@@ -7,6 +7,7 @@ import { TransactionsTable } from "@/components/transactions/transactions-table"
 import { getUserSettings } from "@/lib/queries/finance";
 import { hasAnyTransactions, resolveViewMonth } from "@/lib/queries/month";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { TRANSACTION_WITH_RELATIONS_SELECT } from "@/lib/supabase/errors";
 import type { TransactionWithRelations } from "@/types/database";
 
 export default async function TransactionsPage({
@@ -34,7 +35,7 @@ export default async function TransactionsPage({
 
   let query = supabase
     .from("transactions")
-    .select("*, accounts(id, name, type, currency), categories(id, name, slug, group)")
+    .select(TRANSACTION_WITH_RELATIONS_SELECT)
     .eq("user_id", user.id)
     .gte("transaction_date", start)
     .lte("transaction_date", end)

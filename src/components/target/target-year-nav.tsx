@@ -1,10 +1,16 @@
 import Link from "next/link";
 
-export function TargetYearNav({ year }: { year: number }) {
+export function TargetYearNav({
+  year,
+  basePath = "/target/annual",
+}: {
+  year: number;
+  basePath?: string;
+}) {
   return (
     <div className="flex items-center gap-2.5">
       <Link
-        href={`/target/annual?year=${year - 1}`}
+        href={`${basePath}?year=${year - 1}`}
         className="flex size-9 items-center justify-center rounded-full bg-white text-base font-bold text-[#6E6B82] shadow-[0_2px_8px_rgba(28,27,41,0.06)] transition-colors hover:text-[#6C3FD1]"
         aria-label="Previous year"
       >
@@ -14,7 +20,7 @@ export function TargetYearNav({ year }: { year: number }) {
         {year}
       </span>
       <Link
-        href={`/target/annual?year=${year + 1}`}
+        href={`${basePath}?year=${year + 1}`}
         className="flex size-9 items-center justify-center rounded-full bg-white text-base font-bold text-[#6E6B82] shadow-[0_2px_8px_rgba(28,27,41,0.06)] transition-colors hover:text-[#6C3FD1]"
         aria-label="Next year"
       >

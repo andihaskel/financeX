@@ -1,5 +1,5 @@
 import { convertToUsd } from "@/lib/currency/convert";
-import { format, subMonths } from "date-fns";
+import { format, parseISO, subMonths } from "date-fns";
 import { cache } from "react";
 
 import {
@@ -546,6 +546,177 @@ export async function getAnnualBudgetComparison(year: number) {
     .filter((row) => row.group !== "income")
     .filter((row) => row.actual > 0 || row.budget > 0)
     .sort((a, b) => b.actual - a.actual);
+}
+
+export interface TargetOverviewData {
+  year: number;
+  throughMonth: number;
+  savingsPercent: number;
+  plannedIncomeMonthly: number;
+  plannedIncomeAnnual: number;
+  plannedIncomeYtd: number;
+  goalToSaveMonthly: number;
+  goalToSaveAnnual: number;
+  goalToSaveYtd: number;
+  roomToSpendMonthly: number;
+  roomToSpendAnnual: number;
+  roomToSpendYtd: number;
+  actualIncomeYear: number;
+  actualIncomeYtd: number;
+  incomeDeltaAnnual: number;
+  actualSpentYtd: number;
+  actualSavedYtd: number;
+  incomeDeltaYtd: number;
+  spentVsRoomYtd: number;
+  savedVsGoalYtd: number;
+  monthly: {
+    month: string;
+    monthLabel: string;
+    targetToSpend: number;
+    budgetGap: number;
+    hasOwnBudgets: boolean;
+  };
+  annual: {
+    targetToSpend: number;
+    budgetGap: number;
+    hasOwnBudgets: boolean;
+  };
+}
+
+function resolveOverviewMonth(year: number, referenceDate = new Date()): string {
+  if (year === referenceDate.getFullYear()) {
+    return `${year}-${String(referenceDate.getMonth() + 1).padStart(2, "0")}`;
+  }
+  if (year < referenceDate.getFullYear()) {
+    return `${year}-12`;
+  }
+  return `${year}-01`;
+}
+
+function resolveThroughMonth(year: number, referenceDate = new Date()): number {
+  if (year === referenceDate.getFullYear()) {
+    return referenceDate.getMonth() + 1;
+  }
+  if (year < referenceDate.getFullYear()) {
+    return 12;
+  }
+  return 0;
+}
+
+export async function getTargetOverview(year: number): Promise<TargetOverviewData> {
+  const empty: TargetOverviewData = {
+    year,
+    throughMonth: 0,
+    savingsPercent: 40,
+    plannedIncomeMonthly: 0,
+    plannedIncomeAnnual: 0,
+    plannedIncomeYtd: 0,
+    goalToSaveMonthly: 0,
+    goalToSaveAnnual: 0,
+    goalToSaveYtd: 0,
+    roomToSpendMonthly: 0,
+    roomToSpendAnnual: 0,
+    roomToSpendYtd: 0,
+    actualIncomeYear: 0,
+    actualIncomeYtd: 0,
+    incomeDeltaAnnual: 0,
+    actualSpentYtd: 0,
+    actualSavedYtd: 0,
+    incomeDeltaYtd: 0,
+    spentVsRoomYtd: 0,
+    savedVsGoalYtd: 0,
+    monthly: {
+      month: resolveOverviewMonth(year),
+      monthLabel: "",
+      targetToSpend: 0,
+      budgetGap: 0,
+      hasOwnBudgets: false,
+    },
+    annual: {
+      targetToSpend: 0,
+      budgetGap: 0,
+      hasOwnBudgets: false,
+    },
+  };
+
+  const user = await getUser();
+  if (!user) return empty;
+
+  const throughMonth = resolveThroughMonth(year);
+  const month = resolveOverviewMonth(year);
+  const monthLabel = format(parseISO(`${month}-01`), "MMMM yyyy");
+
+  const supabase = await createClient();
+  const start = `${year}-01-01`;
+  const end = `${year}-12-31`;
+
+  const [monthSummary, annualSummary, settings, linkPool] = await Promise.all([
+    getTargetSummary(month),
+    getAnnualTargetSummary(year),
+    getUserSettings(),
+    fetchYearTransactionsWithRefundLinks(supabase, user.id, year),
+  ]);
+
+  const uyuRate = settings?.uyu_to_usd_rate ?? 40;
+  const yearTransactions = linkPool.filter(
+    (tx) => tx.transaction_date >= start && tx.transaction_date <= end
+  );
+
+  const actualIncomeYear = calculateIncome(yearTransactions, uyuRate);
+
+  let actualIncomeYtd = 0;
+  for (let i = 1; i <= throughMonth; i++) {
+    const monthKey = `${year}-${String(i).padStart(2, "0")}`;
+    const monthTx = yearTransactions.filter((tx) =>
+      tx.transaction_date.startsWith(`${monthKey}-`)
+    );
+    actualIncomeYtd += calculateIncome(monthTx, uyuRate);
+  }
+
+  const plannedIncomeMonthly = monthSummary.expectedIncome;
+  const plannedIncomeAnnual = plannedIncomeMonthly * 12;
+  const plannedIncomeYtd = plannedIncomeMonthly * throughMonth;
+  const goalToSaveMonthly = monthSummary.goalToSave;
+  const goalToSaveYtd = goalToSaveMonthly * throughMonth;
+  const roomToSpendMonthly = monthSummary.roomToSpend;
+  const roomToSpendYtd = roomToSpendMonthly * throughMonth;
+  const actualSpentYtd = annualSummary.spentYtd;
+  const actualSavedYtd = actualIncomeYtd - actualSpentYtd;
+
+  return {
+    year,
+    throughMonth,
+    savingsPercent: monthSummary.savingsPercent,
+    plannedIncomeMonthly,
+    plannedIncomeAnnual,
+    plannedIncomeYtd,
+    goalToSaveMonthly,
+    goalToSaveAnnual: goalToSaveMonthly * 12,
+    goalToSaveYtd,
+    roomToSpendMonthly,
+    roomToSpendAnnual: roomToSpendMonthly * 12,
+    roomToSpendYtd,
+    actualIncomeYear,
+    actualIncomeYtd,
+    incomeDeltaAnnual: actualIncomeYear - plannedIncomeAnnual,
+    actualSpentYtd,
+    actualSavedYtd,
+    incomeDeltaYtd: actualIncomeYtd - plannedIncomeYtd,
+    spentVsRoomYtd: actualSpentYtd - roomToSpendYtd,
+    savedVsGoalYtd: actualSavedYtd - goalToSaveYtd,
+    monthly: {
+      month,
+      monthLabel,
+      targetToSpend: monthSummary.targetToSpend,
+      budgetGap: monthSummary.budgetGap,
+      hasOwnBudgets: monthSummary.hasOwnBudgets,
+    },
+    annual: {
+      targetToSpend: annualSummary.targetToSpend,
+      budgetGap: annualSummary.budgetGap,
+      hasOwnBudgets: annualSummary.hasOwnBudgets,
+    },
+  };
 }
 
 export async function getMonthlyTrend(currentMonth: string) {

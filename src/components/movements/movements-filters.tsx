@@ -11,6 +11,11 @@ import {
   typeNeedsCategory,
 } from "@/lib/categories/helpers";
 import { getMovementsBackTarget } from "@/lib/navigation/return-to";
+import {
+  buildTransferDestinationOptions,
+  transferDestinationFilterLabel,
+  type TransferDestinationValue,
+} from "@/lib/wealth/transfer-destination-values";
 import type { Account, Category, TransactionType } from "@/types/database";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +39,7 @@ export type MovementsFilterValues = {
   account: string;
   category: string;
   type: string;
+  transferTo: TransferDestinationValue;
   extraordinary: string;
   q: string;
   sort: MovementsSort;
@@ -44,6 +50,7 @@ export function MovementsFilters({
   year,
   accounts,
   categories,
+  wealthPositions,
   filters,
   onFilterChange,
 }: {
@@ -51,13 +58,15 @@ export function MovementsFilters({
   year?: string;
   accounts: Account[];
   categories: Category[];
+  wealthPositions: { id: string; name: string }[];
   filters: MovementsFilterValues;
   onFilterChange: (key: keyof MovementsFilterValues, value: string) => void;
 }) {
   const searchParams = useSearchParams();
   const viewingYear = Boolean(year);
+  const from = searchParams.get("from") ?? undefined;
   const backTarget = getMovementsBackTarget(
-    viewingYear ? { year } : { month }
+    viewingYear ? { year, from } : { month, from }
   );
 
   const selectedType = (filters.type ?? "") as TransactionType | "";
@@ -72,6 +81,16 @@ export function MovementsFilters({
     TYPE_OPTIONS.find((t) => t.value === (filters.type ?? ""))?.label ?? "Type";
   const sortLabel =
     SORT_OPTIONS.find((s) => s.value === filters.sort)?.label ?? "Date";
+  const transferOptions = [
+    { value: "", label: "All destinations" },
+    ...buildTransferDestinationOptions(accounts, wealthPositions).map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
+  ];
+  const transferLabel = filters.transferTo
+    ? `${transferDestinationFilterLabel(filters.transferTo, accounts, wealthPositions)} ▾`
+    : "Transfer to ▾";
 
   return (
     <div className="space-y-3.5">
@@ -156,6 +175,12 @@ export function MovementsFilters({
           value={filters.sort}
           onChange={(value) => onFilterChange("sort", value)}
           options={SORT_OPTIONS}
+        />
+        <FilterDropdown
+          label={transferLabel}
+          value={filters.transferTo ?? ""}
+          onChange={(value) => onFilterChange("transferTo", value)}
+          options={transferOptions}
         />
         <button
           type="button"

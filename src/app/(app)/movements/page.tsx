@@ -3,7 +3,13 @@ import { MovementsBrowser } from "@/components/movements/movements-browser";
 import { SurfaceCard } from "@/components/ui/surface";
 import { getAccounts, getCategories } from "@/lib/queries/finance";
 import { hasAnyTransactions, resolveViewMonth } from "@/lib/queries/month";
+import { getWealthSummary } from "@/lib/queries/wealth";
 import { createClient, getUser } from "@/lib/supabase/server";
+import {
+  formatSupabaseError,
+  isMissingColumnError,
+  TRANSACTION_WITH_RELATIONS_SELECT,
+} from "@/lib/supabase/errors";
 import type { TransactionWithRelations } from "@/types/database";
 
 const FETCH_CAP = 2000;
@@ -18,6 +24,7 @@ export default async function MovementsPage({
     account?: string;
     category?: string;
     type?: string;
+    transferTo?: string;
     extraordinary?: string;
     q?: string;
     sort?: string;
@@ -52,13 +59,14 @@ export default async function MovementsPage({
     end = `${month}-${String(lastDay).padStart(2, "0")}`;
   }
 
-  const [anyTransactions, accounts, categories, txResult] = await Promise.all([
+  const [anyTransactions, accounts, categories, wealth, txResult] = await Promise.all([
     hasAnyTransactions(),
     getAccounts(),
     getCategories(),
+    getWealthSummary(),
     supabase
       .from("transactions")
-      .select("*, accounts(id, name, type, currency), categories(id, name, slug, group)")
+      .select(TRANSACTION_WITH_RELATIONS_SELECT)
       .eq("user_id", user.id)
       .gte("transaction_date", start)
       .lte("transaction_date", end)
@@ -68,7 +76,7 @@ export default async function MovementsPage({
   ]);
 
   if (txResult.error) {
-    console.error("movements query failed", txResult.error);
+    console.error("movements query failed", formatSupabaseError(txResult.error), txResult.error);
   }
 
   if (!anyTransactions) {
@@ -90,6 +98,29 @@ export default async function MovementsPage({
     );
   }
 
+  if (txResult.error) {
+    const needsMigration = isMissingColumnError(txResult.error);
+
+    return (
+      <div className="space-y-4">
+        <h1 className="text-[26px] font-extrabold">Movements</h1>
+        <SurfaceCard className="px-8 py-10 text-center">
+          <p className="font-bold">Could not load movements.</p>
+          <p className="mt-2 text-sm font-semibold text-[#6E6B82]">
+            {formatSupabaseError(txResult.error)}
+          </p>
+          {needsMigration ? (
+            <p className="mt-3 text-sm font-semibold text-[#B91C1C]">
+              Run pending Supabase migrations, especially{" "}
+              <code className="rounded bg-[#F3F1F9] px-1.5 py-0.5">012_wealth_reconciliation.sql</code>
+              .
+            </p>
+          ) : null}
+        </SurfaceCard>
+      </div>
+    );
+  }
+
   return (
     <MovementsBrowser
       key={[
@@ -97,6 +128,7 @@ export default async function MovementsPage({
         params.account,
         params.category,
         params.type,
+        params.transferTo,
         params.extraordinary,
         params.q,
         params.sort,
@@ -106,6 +138,10 @@ export default async function MovementsPage({
       year={viewingYear ? yearFilter ?? undefined : undefined}
       accounts={accounts}
       categories={categories}
+      wealthPositions={wealth.positions.map((position) => ({
+        id: position.id,
+        name: position.name,
+      }))}
       transactions={(txResult.data ?? []) as TransactionWithRelations[]}
       initialFilters={params}
     />

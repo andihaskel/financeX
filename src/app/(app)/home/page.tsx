@@ -3,11 +3,12 @@ import Link from "next/link";
 import { HomeMonthTiles } from "@/components/home/home-month-tiles";
 import { YearChart } from "@/components/home/year-chart";
 import { AddMovementsButton } from "@/components/layout/floating-add-button";
-import { AnnualCategoryList } from "@/components/spending/category-spending-list";
+import { BudgetCategoryList } from "@/components/spending/category-spending-list";
 import { SpendingBreakdown } from "@/components/spending/spending-breakdown";
-import { slicesFromCategories } from "@/lib/spending/donut-slices";
+import { slicesFromBudgetRows } from "@/lib/spending/donut-slices";
 import { GradientHero, SectionTitle, SurfaceCard } from "@/components/ui/surface";
 import { formatMoney, formatPercent } from "@/lib/design/format";
+import { getAnnualBudgetComparison } from "@/lib/queries/finance";
 import { getHomeYearData } from "@/lib/queries/year";
 
 export default async function HomePage({
@@ -17,8 +18,10 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const year = params.year ? Number(params.year) : new Date().getFullYear();
-  const { summary, categories, coverageMap } = await getHomeYearData(year);
-  const maxCat = Math.max(...categories.map((c) => c.amount), 1);
+  const [{ summary, categories, coverageMap }, budgetComparison] = await Promise.all([
+    getHomeYearData(year),
+    getAnnualBudgetComparison(year),
+  ]);
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -108,27 +111,27 @@ export default async function HomePage({
         ))}
       </div>
 
-      {categories.length > 0 && (
+      {budgetComparison.length > 0 && (
         <>
           <SectionTitle>Where your money went</SectionTitle>
           <SurfaceCard className="px-4 py-4 sm:px-6">
             <SpendingBreakdown
-              slices={slicesFromCategories(
-                categories.map((cat) => ({
-                  name: cat.name,
-                  slug: cat.slug,
-                  amount: cat.amount,
+              slices={slicesFromBudgetRows(
+                budgetComparison.map((row) => ({
+                  name: row.name,
+                  slug: row.slug,
+                  actual: row.actual,
                 }))
               )}
             >
-              <AnnualCategoryList
-                categories={categories.map((cat) => ({
-                  categoryId: cat.categoryId,
-                  name: cat.name,
-                  slug: cat.slug,
-                  amount: cat.amount,
+              <BudgetCategoryList
+                rows={budgetComparison.map((row) => ({
+                  categoryId: row.categoryId,
+                  name: row.name,
+                  slug: row.slug,
+                  budget: row.budget,
+                  actual: row.actual,
                 }))}
-                maxAmount={maxCat}
                 year={year}
                 returnTo={`/home?year=${year}`}
               />

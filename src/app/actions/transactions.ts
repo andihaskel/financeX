@@ -9,8 +9,19 @@ import {
   normalizeDescription,
 } from "@/lib/categorization/normalize";
 import { getMonthDateRange } from "@/components/dashboard/month-nav";
+import {
+  applyIncomeWealthPositionAdjustments,
+  buildIncomeWealthPositionAdjustments,
+  resolveIncomeWealthLink,
+} from "@/lib/accounting/income-wealth";
+import { getUserSettings } from "@/lib/queries/finance";
 import { createClient, getUser } from "@/lib/supabase/server";
-import type { CategorizationStatus, Currency, TransactionType } from "@/types/database";
+import type {
+  CategorizationStatus,
+  Currency,
+  TransactionType,
+  TransferDestinationKind,
+} from "@/types/database";
 
 export async function updateTransaction(
   transactionId: string,
@@ -23,6 +34,11 @@ export async function updateTransaction(
     categorization_status?: CategorizationStatus;
     transaction_date?: string;
     refunds_transaction_id?: string | null;
+    transfer_destination_kind?: TransferDestinationKind | null;
+    transfer_destination_account_id?: string | null;
+    transfer_destination_wealth_position_id?: string | null;
+    income_wealth_position_id?: string | null;
+    income_principal_amount?: number | null;
   }
 ) {
   const user = await getUser();
@@ -37,7 +53,7 @@ export async function updateTransaction(
   const { data: existing, error: fetchError } = await supabase
     .from("transactions")
     .select(
-      "id, account_id, amount, normalized_description, transaction_date, category_id, transaction_type, refunds_transaction_id"
+      "id, account_id, amount, currency, normalized_description, transaction_date, category_id, transaction_type, refunds_transaction_id, income_wealth_position_id, income_principal_amount"
     )
     .eq("id", transactionId)
     .eq("user_id", user.id)
@@ -112,6 +128,179 @@ export async function updateTransaction(
     }
   }
 
+  if (nextType !== "transfer") {
+    patch.transfer_destination_kind = null;
+    patch.transfer_destination_account_id = null;
+    patch.transfer_destination_wealth_position_id = null;
+  } else if (
+    data.transfer_destination_kind !== undefined ||
+    data.transfer_destination_account_id !== undefined ||
+    data.transfer_destination_wealth_position_id !== undefined
+  ) {
+    const kind = data.transfer_destination_kind ?? null;
+
+    if (!kind) {
+      patch.transfer_destination_kind = null;
+      patch.transfer_destination_account_id = null;
+      patch.transfer_destination_wealth_position_id = null;
+    } else if (kind === "internal_account") {
+      const accountId = data.transfer_destination_account_id ?? null;
+      if (!accountId) {
+        return { error: "Choose the destination account" };
+      }
+      if (accountId === existing.account_id) {
+        return { error: "Destination account must be different from the source account" };
+      }
+
+      const { data: account, error: accountError } = await supabase
+        .from("accounts")
+        .select("id")
+        .eq("id", accountId)
+        .eq("user_id", user.id)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (accountError) return { error: accountError.message };
+      if (!account) return { error: "Choose a valid destination account" };
+
+      patch.transfer_destination_kind = kind;
+      patch.transfer_destination_account_id = accountId;
+      patch.transfer_destination_wealth_position_id = null;
+    } else if (kind === "wealth_position") {
+      const positionId = data.transfer_destination_wealth_position_id ?? null;
+      if (!positionId) {
+        return { error: "Choose the destination wealth position" };
+      }
+
+      const { data: position, error: positionError } = await supabase
+        .from("wealth_positions")
+        .select("id")
+        .eq("id", positionId)
+        .eq("user_id", user.id)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (positionError) return { error: positionError.message };
+      if (!position) return { error: "Choose a valid wealth position" };
+
+      patch.transfer_destination_kind = kind;
+      patch.transfer_destination_account_id = null;
+      patch.transfer_destination_wealth_position_id = positionId;
+    } else if (kind === "external") {
+      patch.transfer_destination_kind = kind;
+      patch.transfer_destination_account_id = null;
+      patch.transfer_destination_wealth_position_id = null;
+    }
+  }
+
+  const shouldProcessIncomeWealth =
+    nextType !== "income" ||
+    data.income_wealth_position_id !== undefined ||
+    data.income_principal_amount !== undefined;
+
+  if (shouldProcessIncomeWealth) {
+    const existingPositionId = existing.income_wealth_position_id ?? null;
+    const existingPrincipal =
+      existing.income_principal_amount != null
+        ? Number(existing.income_principal_amount)
+        : 0;
+
+    const resolved = resolveIncomeWealthLink({
+      nextType,
+      amount: Number(existing.amount),
+      positionId:
+        nextType === "income" && data.income_wealth_position_id === undefined
+          ? existingPositionId
+          : data.income_wealth_position_id,
+      principalAmount:
+        nextType === "income" && data.income_principal_amount === undefined
+          ? existing.income_principal_amount
+          : data.income_principal_amount,
+      existing: {
+        income_wealth_position_id: existingPositionId,
+        income_principal_amount: existingPrincipal > 0 ? existingPrincipal : null,
+      },
+    });
+
+    if ("error" in resolved) return { error: resolved.error };
+
+    const nextPositionId = resolved.link.income_wealth_position_id;
+    const nextPrincipal = resolved.link.income_principal_amount ?? 0;
+    const positionIds = [existingPositionId, nextPositionId].filter(
+      (value): value is string => Boolean(value)
+    );
+
+    if (
+      existingPrincipal !== nextPrincipal ||
+      existingPositionId !== nextPositionId
+    ) {
+      if (nextPositionId) {
+        const { data: nextPosition, error: nextPositionError } = await supabase
+          .from("wealth_positions")
+          .select("id")
+          .eq("id", nextPositionId)
+          .eq("user_id", user.id)
+          .eq("active", true)
+          .maybeSingle();
+
+        if (nextPositionError) return { error: nextPositionError.message };
+        if (!nextPosition) return { error: "Choose a valid wealth position" };
+      }
+
+      const uniquePositionIds = [...new Set(positionIds)];
+      const positions = new Map<string, { amount: number; currency: "USD" | "UYU" }>();
+
+      if (uniquePositionIds.length > 0) {
+        const { data: positionRows, error: positionsError } = await supabase
+          .from("wealth_positions")
+          .select("id, amount, currency")
+          .in("id", uniquePositionIds)
+          .eq("user_id", user.id)
+          .eq("active", true);
+
+        if (positionsError) return { error: positionsError.message };
+
+        for (const row of positionRows ?? []) {
+          positions.set(row.id, {
+            amount: Number(row.amount),
+            currency: row.currency,
+          });
+        }
+
+        for (const positionId of uniquePositionIds) {
+          if (!positions.has(positionId)) {
+            return { error: "Wealth position not found" };
+          }
+        }
+      }
+
+      const settings = await getUserSettings();
+      const uyuRate = settings?.uyu_to_usd_rate ?? 40;
+      const built = buildIncomeWealthPositionAdjustments({
+        existingPositionId,
+        existingPrincipal,
+        existingTxCurrency: existing.currency,
+        nextPositionId,
+        nextPrincipal,
+        nextTxCurrency: existing.currency,
+        positions,
+        uyuRate,
+      });
+
+      if ("error" in built) return { error: built.error };
+
+      const adjustResult = await applyIncomeWealthPositionAdjustments(
+        supabase,
+        user.id,
+        built.adjustments
+      );
+      if (adjustResult.error) return { error: adjustResult.error };
+    }
+
+    patch.income_wealth_position_id = resolved.link.income_wealth_position_id;
+    patch.income_principal_amount = resolved.link.income_principal_amount;
+  }
+
   const { error } = await supabase
     .from("transactions")
     .update(patch)
@@ -122,7 +311,9 @@ export async function updateTransaction(
 
   revalidatePath("/movements");
   revalidatePath("/home");
+  revalidatePath("/wealth");
   revalidatePath("/review");
+  revalidatePath("/target", "layout");
   for (const month of monthKeys) {
     revalidatePath(`/month/${month}`);
   }
@@ -229,13 +420,56 @@ export async function deleteTransaction(transactionId: string) {
 
   const { data: existing, error: fetchError } = await supabase
     .from("transactions")
-    .select("id, transaction_date")
+    .select(
+      "id, transaction_date, transaction_type, currency, income_wealth_position_id, income_principal_amount"
+    )
     .eq("id", transactionId)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (fetchError) return { error: fetchError.message };
   if (!existing) return { error: "Movement not found" };
+
+  if (existing.income_wealth_position_id && existing.income_principal_amount) {
+    const settings = await getUserSettings();
+    const uyuRate = settings?.uyu_to_usd_rate ?? 40;
+    const { data: position, error: positionError } = await supabase
+      .from("wealth_positions")
+      .select("id, amount, currency")
+      .eq("id", existing.income_wealth_position_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (positionError) return { error: positionError.message };
+
+    if (position) {
+      const positions = new Map([
+        [
+          position.id,
+          { amount: Number(position.amount), currency: position.currency },
+        ],
+      ]);
+      const built = buildIncomeWealthPositionAdjustments({
+        existingPositionId: existing.income_wealth_position_id,
+        existingPrincipal: Number(existing.income_principal_amount),
+        existingTxCurrency: existing.currency,
+        nextPositionId: null,
+        nextPrincipal: 0,
+        nextTxCurrency: existing.currency,
+        positions,
+        uyuRate,
+      });
+
+      if ("error" in built) return { error: built.error };
+
+      const adjustResult = await applyIncomeWealthPositionAdjustments(
+        supabase,
+        user.id,
+        built.adjustments
+      );
+      if (adjustResult.error) return { error: adjustResult.error };
+    }
+  }
 
   const { error } = await supabase
     .from("transactions")
@@ -248,8 +482,10 @@ export async function deleteTransaction(transactionId: string) {
   const month = existing.transaction_date.slice(0, 7);
   revalidatePath("/movements");
   revalidatePath("/home");
+  revalidatePath("/wealth");
   revalidatePath(`/month/${month}`);
   revalidatePath("/review");
+  revalidatePath("/target", "layout");
   return { success: true };
 }
 
@@ -680,6 +916,11 @@ export async function createManualTransaction(data: {
     notes: null,
     fingerprint,
     refunds_transaction_id: null,
+    transfer_destination_kind: null,
+    transfer_destination_account_id: null,
+    transfer_destination_wealth_position_id: null,
+    income_wealth_position_id: null,
+    income_principal_amount: null,
   });
 
   if (error) return { error: error.message };

@@ -18,6 +18,8 @@ const accounts: Account[] = [
     type: "bank_account",
     currency: "UYU",
     active: true,
+    opening_balance: null,
+    opening_balance_date: null,
     created_at: "",
   },
   {
@@ -28,6 +30,8 @@ const accounts: Account[] = [
     type: "bank_account",
     currency: "USD",
     active: true,
+    opening_balance: null,
+    opening_balance_date: null,
     created_at: "",
   },
   {
@@ -38,6 +42,8 @@ const accounts: Account[] = [
     type: "credit_card",
     currency: "USD",
     active: true,
+    opening_balance: null,
+    opening_balance_date: null,
     created_at: "",
   },
 ];

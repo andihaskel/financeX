@@ -22,6 +22,8 @@ export function buildMovementsHref(options: {
   year?: number | string;
   type?: string;
   accountId?: string;
+  transferTo?: string;
+  wealthPositionId?: string;
   extraordinary?: boolean;
   returnTo?: string;
 }): string {
@@ -31,6 +33,11 @@ export function buildMovementsHref(options: {
   if (options.month) params.set("month", options.month);
   if (options.year) params.set("year", String(options.year));
   if (options.type) params.set("type", options.type);
+  if (options.transferTo) params.set("transferTo", options.transferTo);
+  if (options.wealthPositionId) {
+    params.set("type", "transfer");
+    params.set("transferTo", `wealth:${options.wealthPositionId}`);
+  }
   if (options.extraordinary) params.set("extraordinary", "yes");
   if (options.returnTo) params.set("from", options.returnTo);
 
@@ -53,10 +60,22 @@ export function getReturnLabel(from: string): string {
   return "Back";
 }
 
+const MOVEMENTS_BACK_TARGETS: Record<string, string> = {
+  "/wealth": "Wealth",
+  "/target": "Targets",
+  "/home": "Home",
+};
+
 export function getMovementsBackTarget(options: {
   month?: string;
   year?: string;
+  from?: string;
 }): { href: string; label: string } | null {
+  const from = safeReturnPath(options.from);
+  if (from && MOVEMENTS_BACK_TARGETS[from]) {
+    return { href: from, label: MOVEMENTS_BACK_TARGETS[from] };
+  }
+
   if (options.year && /^\d{4}$/.test(options.year)) {
     return { href: `/home?year=${options.year}`, label: options.year };
   }

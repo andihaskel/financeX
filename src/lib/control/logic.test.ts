@@ -78,6 +78,11 @@ describe("control matching", () => {
       notes: null,
       fingerprint: "x",
       refunds_transaction_id: null,
+      transfer_destination_kind: null,
+      transfer_destination_account_id: null,
+      transfer_destination_wealth_position_id: null,
+      income_wealth_position_id: null,
+      income_principal_amount: null,
       created_at: "",
       updated_at: "",
     } satisfies Transaction;

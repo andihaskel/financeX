@@ -93,10 +93,12 @@ export interface BudgetCategoryRow {
 export function BudgetCategoryList({
   rows,
   month,
+  year,
   returnTo,
 }: {
   rows: BudgetCategoryRow[];
-  month: string;
+  month?: string;
+  year?: number;
   returnTo?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -121,6 +123,7 @@ export function BudgetCategoryList({
             key={row.categoryId}
             href={buildMovementsHref({
               month,
+              year,
               categoryId: row.categoryId,
               returnTo,
             })}

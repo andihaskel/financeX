@@ -30,6 +30,18 @@ export type ImportStatus = "processing" | "review" | "completed" | "failed";
 
 export type IncomeSourceType = "salary" | "property" | "other";
 
+export type WealthPositionKind =
+  | "cash"
+  | "checking"
+  | "savings"
+  | "investment"
+  | "other";
+
+export type TransferDestinationKind =
+  | "internal_account"
+  | "wealth_position"
+  | "external";
+
 export type CommitmentDirection = "pay" | "receive";
 export type CommitmentAmountType = "fixed" | "variable";
 export type CommitmentRecurrenceType = "monthly" | "annual" | "one_time" | "custom";
@@ -48,6 +60,8 @@ export interface Account {
   type: AccountType;
   currency: Currency;
   active: boolean;
+  opening_balance: number | null;
+  opening_balance_date: string | null;
   created_at: string;
 }
 
@@ -82,6 +96,11 @@ export interface Transaction {
   notes: string | null;
   fingerprint: string;
   refunds_transaction_id: string | null;
+  transfer_destination_kind: TransferDestinationKind | null;
+  transfer_destination_account_id: string | null;
+  transfer_destination_wealth_position_id: string | null;
+  income_wealth_position_id: string | null;
+  income_principal_amount: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -127,6 +146,21 @@ export interface IncomeSource {
   expected_monthly_amount: number;
   currency: Currency;
   active: boolean;
+}
+
+export interface WealthPosition {
+  id: string;
+  user_id: string;
+  name: string;
+  kind: WealthPositionKind;
+  amount: number;
+  currency: Currency;
+  account_id: string | null;
+  notes: string | null;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MonthlyBudget {
@@ -212,6 +246,8 @@ export interface Database {
           type?: AccountType;
           currency: Currency;
           active?: boolean;
+          opening_balance?: number | null;
+          opening_balance_date?: string | null;
           created_at?: string;
         };
         Update: {
@@ -221,6 +257,9 @@ export interface Database {
           institution?: string | null;
           type?: AccountType;
           currency?: Currency;
+          active?: boolean;
+          opening_balance?: number | null;
+          opening_balance_date?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -271,6 +310,11 @@ export interface Database {
           notes?: string | null;
           fingerprint: string;
           refunds_transaction_id?: string | null;
+          transfer_destination_kind?: TransferDestinationKind | null;
+          transfer_destination_account_id?: string | null;
+          transfer_destination_wealth_position_id?: string | null;
+          income_wealth_position_id?: string | null;
+          income_principal_amount?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -294,6 +338,11 @@ export interface Database {
           notes?: string | null;
           fingerprint?: string;
           refunds_transaction_id?: string | null;
+          transfer_destination_kind?: TransferDestinationKind | null;
+          transfer_destination_account_id?: string | null;
+          transfer_destination_wealth_position_id?: string | null;
+          income_wealth_position_id?: string | null;
+          income_principal_amount?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -378,6 +427,38 @@ export interface Database {
           expected_monthly_amount?: number;
           currency?: Currency;
           active?: boolean;
+        };
+        Relationships: [];
+      };
+      wealth_positions: {
+        Row: WealthPosition;
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          kind?: WealthPositionKind;
+          amount?: number;
+          currency: Currency;
+          account_id?: string | null;
+          notes?: string | null;
+          sort_order?: number;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          kind?: WealthPositionKind;
+          amount?: number;
+          currency?: Currency;
+          account_id?: string | null;
+          notes?: string | null;
+          sort_order?: number;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };

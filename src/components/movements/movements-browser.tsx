@@ -13,6 +13,11 @@ import {
   categoriesForTransactionType,
   typeNeedsCategory,
 } from "@/lib/categories/helpers";
+import {
+  matchesTransferDestinationFilter,
+  type TransferDestinationValue,
+} from "@/lib/wealth/transfer-destination-values";
+import type { WealthPositionOption } from "@/components/movements/transfer-destination-picker";
 import type { Account, Category, TransactionType, TransactionWithRelations } from "@/types/database";
 
 const PAGE_SIZE = 10;
@@ -33,6 +38,7 @@ function filtersFromInitial(initial: Record<string, string | undefined>): Moveme
     account: initial.account ?? "",
     category: initial.category ?? "",
     type: initial.type ?? "",
+    transferTo: (initial.transferTo ?? "") as TransferDestinationValue,
     extraordinary,
     q: initial.q ?? "",
     sort: parseSort(initial.sort),
@@ -41,14 +47,16 @@ function filtersFromInitial(initial: Record<string, string | undefined>): Moveme
 
 function syncFiltersToUrl(
   filters: MovementsFilterValues,
-  base: { month?: string; year?: string }
+  base: { month?: string; year?: string; from?: string }
 ) {
   const params = new URLSearchParams();
   if (base.year) params.set("year", base.year);
   if (base.month) params.set("month", base.month);
+  if (base.from) params.set("from", base.from);
   if (filters.account) params.set("account", filters.account);
   if (filters.category) params.set("category", filters.category);
   if (filters.type) params.set("type", filters.type);
+  if (filters.transferTo) params.set("transferTo", filters.transferTo);
   if (filters.extraordinary) params.set("extraordinary", filters.extraordinary);
   if (filters.q.trim()) params.set("q", filters.q.trim());
   if (filters.sort !== "date") params.set("sort", filters.sort);
@@ -94,6 +102,7 @@ export function MovementsBrowser({
   accounts,
   categories,
   transactions,
+  wealthPositions,
   initialFilters,
 }: {
   month: string;
@@ -101,10 +110,12 @@ export function MovementsBrowser({
   accounts: Account[];
   categories: Category[];
   transactions: TransactionWithRelations[];
+  wealthPositions: WealthPositionOption[];
   initialFilters: Record<string, string | undefined>;
 }) {
   const [filters, setFilters] = useState(() => filtersFromInitial(initialFilters));
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const returnTo = initialFilters.from;
 
   function onFilterChange(key: keyof MovementsFilterValues, value: string) {
     setFilters((prev) => {
@@ -122,11 +133,17 @@ export function MovementsBrowser({
         } else if (value) {
           next.category = "";
         }
+        if (value !== "transfer" && next.transferTo) next.transferTo = "";
+      }
+
+      if (key === "transferTo" && value) {
+        next.type = "transfer";
       }
 
       syncFiltersToUrl(next, {
         month: year ? undefined : month,
         year,
+        from: returnTo,
       });
       return next;
     });
@@ -138,6 +155,12 @@ export function MovementsBrowser({
       if (filters.account && tx.account_id !== filters.account) return false;
       if (filters.category && tx.category_id !== filters.category) return false;
       if (filters.type && tx.transaction_type !== filters.type) return false;
+      if (
+        filters.transferTo &&
+        !matchesTransferDestinationFilter(tx, filters.transferTo)
+      ) {
+        return false;
+      }
       if (filters.extraordinary === "yes" && !isExtraordinaryMovement(tx, categories)) {
         return false;
       }
@@ -161,6 +184,7 @@ export function MovementsBrowser({
         year={year}
         accounts={accounts}
         categories={categories}
+        wealthPositions={wealthPositions}
         filters={filters}
         onFilterChange={onFilterChange}
       />
@@ -183,6 +207,7 @@ export function MovementsBrowser({
             transactions={visible}
             categories={categories}
             accounts={accounts}
+            wealthPositions={wealthPositions}
             groupByDate={filters.sort === "date"}
           />
           {remaining > 0 && (

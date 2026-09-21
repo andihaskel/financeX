@@ -1,6 +1,7 @@
 import {
   ClipboardCheck,
   Home,
+  Landmark,
   LineChart,
   Settings,
   Wallet,
@@ -25,8 +26,9 @@ export const appNavItems: {
     href: "/target",
     label: "Targets",
     icon: LineChart,
-    match: ["/target", "/target/annual", "/plan", "/budget"],
+    match: ["/target", "/target/month", "/target/annual", "/plan", "/budget"],
   },
+  { href: "/wealth", label: "Wealth", icon: Landmark, match: ["/wealth"] },
 ];
 
 export const settingsNavItem = {

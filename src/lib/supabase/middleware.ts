@@ -11,6 +11,7 @@ const protectedPrefixes = [
   "/control",
   "/transactions",
   "/target",
+  "/wealth",
   "/plan",
   "/budget",
   "/import",
