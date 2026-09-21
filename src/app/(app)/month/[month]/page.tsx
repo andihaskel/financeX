@@ -28,7 +28,7 @@ import {
   getDashboardMetrics,
   getMonthTransactions,
 } from "@/lib/queries/finance";
-import { buildMonthImportCoverage } from "@/lib/queries/import-coverage";
+import { buildMonthImportCoverage, getLastImportUploadByAccount } from "@/lib/queries/import-coverage";
 import { getUser } from "@/lib/supabase/server";
 import { ImportCoveragePanel } from "@/components/accounts/import-coverage";
 
@@ -62,6 +62,22 @@ export default async function MonthPage({
     accounts,
     new Set(transactions.map((transaction) => transaction.account_id))
   );
+  const lastUploadByAccount = await getLastImportUploadByAccount(
+    user.id,
+    importCoverage.accounts.map((account) => account.id)
+  );
+
+  function monthDataAccounts() {
+    return importCoverage.accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      shortLabel: account.shortLabel,
+      imported: account.imported,
+      count: deleteCountByAccount.get(account.id) ?? 0,
+      color: accountDotColor(account.shortLabel),
+      lastUploadedAt: lastUploadByAccount.get(account.id) ?? null,
+    }));
+  }
 
   const accountById = new Map(accounts.map((account) => [account.id, account]));
   const categoryById = new Map(categories.map((category) => [category.id, category]));
@@ -173,14 +189,7 @@ export default async function MonthPage({
       <MonthDataPanel
         month={month}
         monthLabel={monthNameOnly}
-        accounts={importCoverage.accounts.map((account) => ({
-          id: account.id,
-          name: account.name,
-          shortLabel: account.shortLabel,
-          imported: account.imported,
-          count: deleteCountByAccount.get(account.id) ?? 0,
-          color: accountDotColor(account.shortLabel),
-        }))}
+        accounts={monthDataAccounts()}
       />
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">

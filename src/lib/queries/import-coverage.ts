@@ -52,6 +52,30 @@ export function buildMonthImportCoverage(
   };
 }
 
+/** Latest file upload (`imports.imported_at`) per account, most recent first. */
+export async function getLastImportUploadByAccount(
+  userId: string,
+  accountIds: string[]
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (accountIds.length === 0) return map;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("imports")
+    .select("account_id, imported_at")
+    .eq("user_id", userId)
+    .in("account_id", accountIds)
+    .order("imported_at", { ascending: false });
+
+  for (const row of data ?? []) {
+    if (!row.account_id || map.has(row.account_id)) continue;
+    map.set(row.account_id, row.imported_at);
+  }
+
+  return map;
+}
+
 export async function getMonthImportCoverage(month: string): Promise<MonthImportCoverage | null> {
   const user = await getUser();
   if (!user) return null;

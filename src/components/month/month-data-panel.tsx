@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { format, parseISO } from "date-fns";
 import { Eye, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,12 @@ export interface MonthDataAccountRow {
   imported: boolean;
   count: number;
   color: string;
+  lastUploadedAt: string | null;
+}
+
+function lastUploadLabel(iso: string | null) {
+  if (!iso) return "No file uploaded yet";
+  return `Last upload · ${format(parseISO(iso), "MMM d, yyyy")}`;
 }
 
 function AccountActionIcon({
@@ -219,9 +226,12 @@ export function MonthDataPanel({
               style={{ backgroundColor: account.color }}
               aria-hidden
             />
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[#1C1B29]">
-              {account.name}
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-[#1C1B29]">{account.name}</p>
+              <p className="mt-0.5 text-xs font-semibold text-[#9E9AB0]">
+                {lastUploadLabel(account.lastUploadedAt)}
+              </p>
+            </div>
             <AccountRowActions month={month} monthLabel={monthLabel} account={account} />
           </div>
         ))}
