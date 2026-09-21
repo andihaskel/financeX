@@ -4,7 +4,7 @@ import type { LinkedTransactionForAccounting } from "@/lib/accounting/refund-lin
 import type { Transaction } from "@/types/database";
 
 const LINK_FIELDS =
-  "id, transaction_date, amount, currency, transaction_type, excluded_from_spending, is_extraordinary, category_id, refunds_transaction_id";
+  "id, transaction_date, amount, currency, transaction_type, excluded_from_spending, is_extraordinary, category_id, refunds_transaction_id, account_id";
 
 function asLinked(transactions: Transaction[]): LinkedTransactionForAccounting[] {
   return transactions;
