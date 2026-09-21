@@ -10,31 +10,19 @@ import {
 } from "@/app/actions/transactions";
 import { Input } from "@/components/ui/input";
 import {
+  ACCOUNT_TYPE_OPTIONS,
   getAccountDisplayName,
-  isBankAccountType,
-  isCreditCardType,
 } from "@/lib/accounts/helpers";
 import { categoriesForTransactionType } from "@/lib/categories/helpers";
 import { formatTransactionAmount } from "@/lib/design/format";
-import type { Account, Category } from "@/types/database";
+import type { Account, AccountType, Category } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 type PickerStep = "quick" | "browse";
-type AccountTypeFilter = "" | "bank" | "credit_card" | "cash" | "investment";
-
-const ACCOUNT_TYPE_OPTIONS: { value: AccountTypeFilter; label: string }[] = [
-  { value: "", label: "All account types" },
-  { value: "bank", label: "Bank accounts" },
-  { value: "credit_card", label: "Credit cards" },
-  { value: "cash", label: "Cash" },
-  { value: "investment", label: "Investment" },
-];
+type AccountTypeFilter = "" | AccountType;
 
 function matchesAccountType(account: Account, filter: AccountTypeFilter) {
-  if (!filter) return true;
-  if (filter === "bank") return isBankAccountType(account.type);
-  if (filter === "credit_card") return isCreditCardType(account.type);
-  return account.type === filter;
+  return !filter || account.type === filter;
 }
 
 function ExpenseRow({
@@ -345,7 +333,10 @@ export function RefundExpenseLinkPicker({
               setBrowseAccountType(next as AccountTypeFilter);
               setBrowseAccountId("");
             }}
-            options={ACCOUNT_TYPE_OPTIONS}
+            options={[
+              { value: "", label: "All account types" },
+              ...ACCOUNT_TYPE_OPTIONS,
+            ]}
           />
 
           <FilterSelect

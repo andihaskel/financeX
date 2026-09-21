@@ -1,5 +1,29 @@
 import type { Account, AccountType, Currency } from "@/types/database";
 
+export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  bank_account: "Bank account",
+  credit_card: "Credit card",
+  savings: "Savings",
+  cash: "Cash",
+  investment: "Investment",
+  checking: "Checking",
+};
+
+export const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = (
+  [
+    "bank_account",
+    "credit_card",
+    "savings",
+    "cash",
+    "investment",
+    "checking",
+  ] as const
+).map((value) => ({ value, label: ACCOUNT_TYPE_LABELS[value] }));
+
+export function getAccountTypeLabel(type: AccountType): string {
+  return ACCOUNT_TYPE_LABELS[type];
+}
+
 export type ParsedAccountKind = "bank_account" | "credit_card" | "checking";
 
 export function isBankAccountType(type: AccountType): boolean {
