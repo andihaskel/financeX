@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import {
   createManualTransaction,
   deleteTransaction,
-  searchExpensesForRefundLink,
   updateTransaction,
 } from "@/app/actions/transactions";
 import {
@@ -27,11 +26,13 @@ import { getAccountDisplayName } from "@/lib/accounts/helpers";
 import { getCategoryVisual } from "@/lib/design/theme";
 import { categoriesForTransactionType } from "@/lib/categories/helpers";
 import type {
+  Account,
   Category,
   TransactionType,
   TransactionWithRelations,
 } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { RefundExpenseLinkPicker } from "@/components/movements/refund-expense-link-picker";
 
 function groupByDate(transactions: TransactionWithRelations[]) {
   const groups = new Map<string, TransactionWithRelations[]>();
@@ -351,11 +352,13 @@ function MovementFormFields({
 function MovementRow({
   tx,
   categories,
+  accounts,
   onDeleted,
   onUpdated,
 }: {
   tx: TransactionWithRelations;
   categories: Category[];
+  accounts: Account[];
   onDeleted: (id: string) => void;
   onUpdated: (next: TransactionWithRelations) => void;
 }) {
@@ -372,15 +375,6 @@ function MovementRow({
   const [editRefundsTransactionId, setEditRefundsTransactionId] = useState(
     tx.refunds_transaction_id ?? ""
   );
-  const [linkableExpenses, setLinkableExpenses] = useState<
-    Array<{
-      id: string;
-      description: string;
-      transaction_date: string;
-      amount: number;
-      currency: "USD" | "UYU";
-    }>
-  >([]);
 
   const { label, visual } = displayMeta(tx, categories);
   const accountName = tx.accounts ? getAccountDisplayName(tx.accounts) : "Unknown account";
@@ -403,18 +397,6 @@ function MovementRow({
     if (!modalOpen) return;
     resetFormFromTx();
   }, [modalOpen, tx]);
-
-  useEffect(() => {
-    if (!modalOpen || editType !== "refund") return;
-
-    void searchExpensesForRefundLink({
-      refundId: tx.id,
-      accountId: tx.account_id,
-    }).then((result) => {
-      if (result.error) return;
-      setLinkableExpenses(result.expenses ?? []);
-    });
-  }, [modalOpen, editType, tx.id, tx.account_id]);
 
   function closeModal() {
     setModalMode(null);
@@ -627,33 +609,18 @@ function MovementRow({
           />
 
           {editType === "refund" && (
-            <div className="mt-4 border-t border-[#F1EFF7] pt-4">
-              <label className="mb-2 block text-[13px] font-semibold text-[#6E6B82]">
-                Link to original expense (optional)
-              </label>
-              <select
-                value={editRefundsTransactionId}
-                onChange={(e) => setEditRefundsTransactionId(e.target.value)}
-                className="w-full rounded-[13px] border border-[#E2DEF0] px-3.5 py-3 text-sm font-semibold outline-none focus:border-[#6C3FD1]"
-              >
-                <option value="">Count in refund month (cash)</option>
-                {editRefundsTransactionId &&
-                  !linkableExpenses.some((expense) => expense.id === editRefundsTransactionId) && (
-                    <option value={editRefundsTransactionId}>Linked expense</option>
-                  )}
-                {linkableExpenses.map((expense) => (
-                  <option key={expense.id} value={expense.id}>
-                    {format(parseISO(expense.transaction_date), "MMM d, yyyy")} ·{" "}
-                    {expense.description} ·{" "}
-                    {formatTransactionAmount(expense.amount, expense.currency)}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-2 text-xs font-semibold text-[#6E6B82]">
-                Linked refunds reduce spending in the expense month instead of the refund
-                month.
-              </p>
-            </div>
+            <RefundExpenseLinkPicker
+              key={`${tx.id}-${modalOpen}-${editDate}`}
+              value={editRefundsTransactionId}
+              onChange={setEditRefundsTransactionId}
+              accountId={tx.account_id}
+              refundId={tx.id}
+              refundDate={editDate}
+              accounts={accounts}
+              categories={categories}
+              disabled={isPending}
+              active={modalOpen && editType === "refund"}
+            />
           )}
           </div>
 
@@ -740,10 +707,12 @@ function MovementRow({
 export function MovementsList({
   transactions,
   categories,
+  accounts,
   groupByDate: shouldGroupByDate = true,
 }: {
   transactions: TransactionWithRelations[];
   categories: Category[];
+  accounts: Account[];
   groupByDate?: boolean;
 }) {
   const [items, setItems] = useState(transactions);
@@ -758,6 +727,7 @@ export function MovementsList({
         key={tx.id}
         tx={tx}
         categories={categories}
+        accounts={accounts}
         onDeleted={(id) =>
           setItems((current) => current.filter((item) => item.id !== id))
         }

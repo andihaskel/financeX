@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { format } from "date-fns";
+import { endOfMonth, format, parseISO, subMonths } from "date-fns";
 
 import { applyManualCategorization } from "@/lib/categorization/categorize";
 import {
@@ -129,18 +129,34 @@ export async function updateTransaction(
   return { success: true };
 }
 
+export type RefundLinkExpense = {
+  id: string;
+  description: string;
+  transaction_date: string;
+  amount: number;
+  currency: "USD" | "UYU";
+};
+
 export async function searchExpensesForRefundLink(options: {
   refundId?: string;
   accountId?: string;
+  accountIds?: string[];
   query?: string;
+  linkedExpenseId?: string | null;
   limit?: number;
+  month?: string;
+  date?: string;
+  categoryId?: string;
 }) {
   const user = await getUser();
-  if (!user) return { error: "Not authenticated" as const, expenses: [] };
+  if (!user) {
+    return { error: "Not authenticated" as const, expenses: [] as RefundLinkExpense[], truncated: false };
+  }
 
   const supabase = await createClient();
-  const limit = Math.min(options.limit ?? 25, 50);
-  const sixMonthsAgo = format(new Date(Date.now() - 1000 * 60 * 60 * 24 * 180), "yyyy-MM-dd");
+  const needle = options.query?.trim() ?? "";
+  const hasScopedFilters = Boolean(options.date || options.month || needle || options.categoryId);
+  const limit = Math.min(options.limit ?? (hasScopedFilters ? 50 : 40), 100);
 
   let request = supabase
     .from("transactions")
@@ -148,24 +164,61 @@ export async function searchExpensesForRefundLink(options: {
     .eq("user_id", user.id)
     .eq("transaction_type", "expense")
     .lt("amount", 0)
-    .gte("transaction_date", sixMonthsAgo)
     .order("transaction_date", { ascending: false })
     .limit(limit);
 
-  if (options.accountId) {
-    request = request.eq("account_id", options.accountId);
+  if (options.date) {
+    request = request.eq("transaction_date", options.date);
+  } else if (options.month && /^\d{4}-\d{2}$/.test(options.month)) {
+    const monthStart = `${options.month}-01`;
+    const monthEnd = format(endOfMonth(parseISO(monthStart)), "yyyy-MM-dd");
+    request = request.gte("transaction_date", monthStart).lte("transaction_date", monthEnd);
+  } else if (!needle) {
+    request = request.gte(
+      "transaction_date",
+      format(subMonths(new Date(), 12), "yyyy-MM-dd")
+    );
   }
 
-  const needle = options.query?.trim();
   if (needle) {
     request = request.ilike("description", `%${needle}%`);
   }
 
-  const { data, error } = await request;
-  if (error) return { error: error.message, expenses: [] };
+  if (options.categoryId) {
+    request = request.eq("category_id", options.categoryId);
+  }
 
-  const expenses = (data ?? []).filter((row) => row.id !== options.refundId);
-  return { expenses };
+  if (options.accountIds?.length) {
+    request = request.in("account_id", options.accountIds);
+  } else if (options.accountId) {
+    request = request.eq("account_id", options.accountId);
+  }
+
+  const { data, error } = await request;
+  if (error) return { error: error.message, expenses: [] as RefundLinkExpense[], truncated: false };
+
+  const expenses = (data ?? []).filter((row) => row.id !== options.refundId) as RefundLinkExpense[];
+  const truncated = (data?.length ?? 0) >= limit;
+
+  if (
+    options.linkedExpenseId &&
+    !expenses.some((row) => row.id === options.linkedExpenseId)
+  ) {
+    const { data: linked } = await supabase
+      .from("transactions")
+      .select("id, description, transaction_date, amount, currency")
+      .eq("id", options.linkedExpenseId)
+      .eq("user_id", user.id)
+      .eq("transaction_type", "expense")
+      .lt("amount", 0)
+      .maybeSingle();
+
+    if (linked) {
+      expenses.unshift(linked as RefundLinkExpense);
+    }
+  }
+
+  return { expenses, truncated };
 }
 
 export async function deleteTransaction(transactionId: string) {

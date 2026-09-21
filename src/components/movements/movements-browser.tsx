@@ -182,6 +182,7 @@ export function MovementsBrowser({
           <MovementsList
             transactions={visible}
             categories={categories}
+            accounts={accounts}
             groupByDate={filters.sort === "date"}
           />
           {remaining > 0 && (
