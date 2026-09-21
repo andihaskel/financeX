@@ -96,6 +96,46 @@ describe("control matching", () => {
     );
     expect(match?.score).toBeGreaterThanOrEqual(85);
   });
+
+  it("allows matching in the month after the control period", () => {
+    const tx = {
+      id: "t2",
+      user_id: "u",
+      account_id: "a",
+      import_id: null,
+      transaction_date: "2026-10-02",
+      description: "Transfer Rocío Velasco",
+      normalized_description: "transfer rocio velasco",
+      amount: -36000,
+      currency: "UYU" as const,
+      transaction_type: "expense" as const,
+      category_id: null,
+      is_recurring: false,
+      is_extraordinary: false,
+      excluded_from_spending: false,
+      categorization_status: "manual" as const,
+      categorization_rule_id: null,
+      notes: null,
+      fingerprint: "y",
+      refunds_transaction_id: null,
+      transfer_destination_kind: null,
+      transfer_destination_account_id: null,
+      transfer_destination_wealth_position_id: null,
+      income_wealth_position_id: null,
+      income_principal_amount: null,
+      created_at: "",
+      updated_at: "",
+    } satisfies Transaction;
+
+    const match = scoreCommitmentMatch(
+      baseCommitment,
+      { expected_amount: 36000, actual_amount: null },
+      tx,
+      2026,
+      9
+    );
+    expect(match?.score).toBeGreaterThanOrEqual(85);
+  });
 });
 
 describe("control visuals", () => {

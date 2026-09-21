@@ -595,7 +595,7 @@ function CommitmentRow({
                 Reconcile manually
               </p>
               <p className="mb-3 text-xs font-semibold text-[#6E6B82]">
-                Search this month’s movements and link one
+                Search movements from this month and the next, then link one
               </p>
 
               {linkedTx ? (
@@ -630,7 +630,7 @@ function CommitmentRow({
 
               {monthTransactions.length === 0 ? (
                 <p className="py-3 text-center text-xs font-semibold text-[#6E6B82]">
-                  No movements in this month yet
+                  No movements in this month or the next yet
                 </p>
               ) : filteredMovements.length === 0 ? (
                 <p className="py-3 text-center text-xs font-semibold text-[#6E6B82]">

@@ -1,3 +1,5 @@
+import { addMonths, endOfMonth, format, parseISO } from "date-fns";
+
 import { DEFAULT_COMMITMENT_SEEDS, isCommitmentActiveInMonth } from "@/lib/control/defaults";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type {
@@ -100,9 +102,9 @@ export async function getControlMonthBundle(monthKey: string) {
   const { commitments, occurrences } = await getOccurrencesForMonth(user.id, year, month);
 
   const supabase = await createClient();
-  const start = `${monthKey}-01`;
-  const lastDay = new Date(year, month, 0).getDate();
-  const end = `${monthKey}-${String(lastDay).padStart(2, "0")}`;
+  const monthStart = parseISO(`${monthKey}-01`);
+  const start = format(monthStart, "yyyy-MM-dd");
+  const end = format(endOfMonth(addMonths(monthStart, 1)), "yyyy-MM-dd");
 
   const [{ data: transactions }, previousMonth] = await Promise.all([
     supabase

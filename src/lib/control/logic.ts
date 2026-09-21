@@ -77,6 +77,22 @@ export type MatchCandidate = {
 
 const AMOUNT_TOLERANCE = 1;
 
+/** Control month plus the following calendar month (early payments / delayed imports). */
+export function isTransactionInReconciliationWindow(
+  transactionDate: string,
+  year: number,
+  month: number
+): boolean {
+  const txMonth = transactionDate.slice(0, 7);
+  const period = `${year}-${String(month).padStart(2, "0")}`;
+  if (txMonth === period) return true;
+
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextPeriod = `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+  return txMonth === nextPeriod;
+}
+
 export function scoreCommitmentMatch(
   commitment: Commitment,
   occurrence: Pick<CommitmentOccurrence, "expected_amount" | "actual_amount">,
@@ -86,9 +102,9 @@ export function scoreCommitmentMatch(
 ): MatchCandidate | null {
   if (transaction.currency !== commitment.currency) return null;
 
-  const txMonth = transaction.transaction_date.slice(0, 7);
-  const period = `${year}-${String(month).padStart(2, "0")}`;
-  if (txMonth !== period) return null;
+  if (!isTransactionInReconciliationWindow(transaction.transaction_date, year, month)) {
+    return null;
+  }
 
   const expected = displayAmountForOccurrence(commitment, occurrence);
   if (expected == null) return null;
