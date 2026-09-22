@@ -48,7 +48,7 @@ export function AnnualCategoryList({
           <Link
             key={cat.categoryId}
             href={movementsHref(cat.categoryId)}
-            className="flex items-center gap-2 border-b border-[#F1EFF7] py-3.5 last:border-0 transition-colors hover:bg-[#FAF9FC] sm:gap-3.5"
+            className="flex items-center gap-2 border-b border-fx-line py-3.5 last:border-0 transition-colors hover:bg-fx-accent-soft/50 sm:gap-3.5"
           >
             <CategoryChip emoji={visual.emoji} color={visual.chipColor} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:w-40 sm:flex-none sm:shrink-0">
@@ -127,7 +127,7 @@ export function BudgetCategoryList({
               categoryId: row.categoryId,
               returnTo,
             })}
-            className="block border-b border-[#F1EFF7] py-3.5 last:border-0 transition-colors hover:bg-[#FAF9FC]"
+            className="block border-b border-fx-line py-3.5 last:border-0 transition-colors hover:bg-fx-accent-soft/50"
           >
             <div className="mb-2 flex items-center gap-3.5">
               <CategoryChip emoji={visual.emoji} color={visual.chipColor} />

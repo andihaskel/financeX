@@ -22,7 +22,7 @@ export function SpendingBreakdown({
           <SpendingDonutChart slices={slices} className="w-full max-w-[220px]" />
         </div>
       )}
-      <div className={hasDonut ? "" : "lg:col-span-2"}>{children}</div>
+      <div className={cn(hasDonut ? "min-w-0" : "lg:col-span-2")}>{children}</div>
     </div>
   );
 }

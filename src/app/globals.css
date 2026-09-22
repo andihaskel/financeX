@@ -211,7 +211,7 @@
   .dark [class*="bg-[#E8E4F4]"] {
     background-color: var(--fx-accent-soft) !important;
   }
-  .dark [class*="bg-[#FAF9FC]"] {
+  .dark [class*="bg-[#FAF9FC]"]:not([class*="hover:bg-[#FAF9FC]"]) {
     background-color: var(--fx-surface-muted) !important;
   }
   .dark [class*="bg-white"]:not([class*="bg-white/"]) {
