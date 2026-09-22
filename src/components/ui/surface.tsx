@@ -1,3 +1,4 @@
+import { surfaceCardClass } from "@/lib/design/fx-classes";
 import { cn } from "@/lib/utils";
 
 export { PageTitleWithInfo, SectionInfoButton, SectionTitle, SubsectionLabel } from "@/components/ui/section-info-dialog";
@@ -10,14 +11,7 @@ export function SurfaceCard({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-[22px] bg-white p-6 shadow-[0_6px_20px_rgba(28,27,41,0.06)]",
-        className
-      )}
-    >
-      {children}
-    </div>
+    <div className={surfaceCardClass(className)}>{children}</div>
   );
 }
 

@@ -5,7 +5,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-[#F3F1F9] text-[#1C1B29]">
+    <div className="flex min-h-screen bg-fx-canvas text-fx-ink">
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppMobileHeader />

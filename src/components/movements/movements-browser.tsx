@@ -198,7 +198,7 @@ export function MovementsBrowser({
         </SurfaceCard>
       ) : (
         <SurfaceCard>
-          <SectionTitle infoKey="movements.list">
+          <SectionTitle>
             {visible.length === filtered.length
               ? `${filtered.length} movement${filtered.length === 1 ? "" : "s"}`
               : `Showing ${visible.length} of ${filtered.length}`}

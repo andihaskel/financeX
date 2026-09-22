@@ -6,7 +6,7 @@ import { AddMovementsButton } from "@/components/layout/floating-add-button";
 import { BudgetCategoryList } from "@/components/spending/category-spending-list";
 import { SpendingBreakdown } from "@/components/spending/spending-breakdown";
 import { slicesFromBudgetRows } from "@/lib/spending/donut-slices";
-import { GradientHero, SectionTitle, SurfaceCard } from "@/components/ui/surface";
+import { GradientHero, PageTitleWithInfo, SectionTitle, SurfaceCard } from "@/components/ui/surface";
 import { formatMoney, formatPercent } from "@/lib/design/format";
 import { getAnnualBudgetComparison } from "@/lib/queries/finance";
 import { getHomeYearData } from "@/lib/queries/year";
@@ -30,8 +30,8 @@ export default async function HomePage({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="mr-auto text-sm font-bold text-[#6E6B82]">{year}</div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
+        <PageTitleWithInfo title="Your year at a glance" infoKey="home.page" className="sm:mr-auto" />
         <AddMovementsButton month={currentMonth} />
       </div>
 
@@ -40,7 +40,7 @@ export default async function HomePage({
           <Link href={`/home?year=${year - 1}`} className="text-base opacity-70">
             ‹
           </Link>
-          <h1 className="text-[26px] font-extrabold">{year}</h1>
+          <p className="text-[26px] font-extrabold">{year}</p>
           <Link href={`/home?year=${year + 1}`} className="text-base opacity-70">
             ›
           </Link>
@@ -83,7 +83,7 @@ export default async function HomePage({
         </div>
       </GradientHero>
 
-      <SectionTitle infoKey="home.yourMonths">Your months</SectionTitle>
+      <SectionTitle>Your months</SectionTitle>
       <HomeMonthTiles
         year={year}
         months={summary.months}
@@ -91,12 +91,12 @@ export default async function HomePage({
         currentMonth={currentMonth}
       />
 
-      <SectionTitle infoKey="home.yearAtGlance">The year at a glance</SectionTitle>
+      <SectionTitle>The year at a glance</SectionTitle>
       <SurfaceCard>
         <YearChart months={summary.months} />
       </SurfaceCard>
 
-      <SectionTitle infoKey="home.yearFacts">A few things about your year</SectionTitle>
+      <SectionTitle>A few things about your year</SectionTitle>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3.5">
         {[
           ["Average monthly spending", formatMoney(summary.avgSpending)],
@@ -119,7 +119,7 @@ export default async function HomePage({
 
       {budgetComparison.length > 0 && (
         <>
-          <SectionTitle infoKey="home.whereMoneyWent">Where your money went</SectionTitle>
+          <SectionTitle>Where your money went</SectionTitle>
           <SurfaceCard className="px-4 py-4 sm:px-6">
             <SpendingBreakdown
               slices={slicesFromBudgetRows(

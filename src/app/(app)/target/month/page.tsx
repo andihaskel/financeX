@@ -24,12 +24,12 @@ export default async function MonthlyTargetPage({
 
   return (
     <div className="space-y-5">
-      <TargetScopeNav />
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
         <PageTitleWithInfo title="Monthly target" infoKey="target.monthlyPage" className="sm:mr-auto" />
         <TargetMonthNav month={month} />
       </div>
+
+      <TargetScopeNav />
 
       <p className="text-sm font-semibold text-[#6E6B82]">
         Category budgets for {monthLabel}. Bars show what you spent; edit targets on the right.

@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { ImportDialogProvider } from "@/components/import/import-dialog-store";
 import { AddMovementsDialog } from "@/components/import/add-movements-dialog";
 import { OpenImportOnQuery } from "@/components/import/open-import-on-query";
-import { IncognitoBanner, IncognitoToggleFab } from "@/components/privacy/incognito-chrome";
+import { IncognitoBanner } from "@/components/privacy/incognito-chrome";
 import { AppShell } from "@/components/layout/app-shell";
 import { IncognitoProvider } from "@/lib/privacy/incognito-context";
 import {
@@ -31,7 +31,6 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
               <OpenImportOnQuery />
             </Suspense>
           </AppShell>
-          <IncognitoToggleFab />
         </ImportDialogProvider>
       </ShellFinanceProvider>
     </IncognitoProvider>

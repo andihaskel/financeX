@@ -68,7 +68,7 @@ export function TargetBudgetForm(props: TargetBudgetFormProps) {
       }}
       className="space-y-6"
     >
-      <SubsectionLabel infoKey="target.categoryBudgets">Category budgets</SubsectionLabel>
+      <SubsectionLabel>Category budgets</SubsectionLabel>
       <SurfaceCard className="px-5 py-1">
         {data.map((row) => {
           const visual = getCategoryVisual(row.slug);

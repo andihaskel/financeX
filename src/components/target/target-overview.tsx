@@ -82,7 +82,7 @@ export function TargetOverviewPanel({
   return (
     <div className="space-y-4">
       <GradientHero className="px-6 py-5">
-        <SubsectionLabel infoKey="target.globalIncome" tone="hero" className="mb-1">
+        <SubsectionLabel tone="hero" className="mb-1">
           Global income · {data.year}
         </SubsectionLabel>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -126,7 +126,7 @@ export function TargetOverviewPanel({
 
       <SurfaceCard className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SubsectionLabel infoKey="target.netWorthTracked">
+          <SubsectionLabel>
             Net worth tracked
           </SubsectionLabel>
           <p className="mt-1 text-lg font-extrabold tabular-nums">
@@ -147,7 +147,7 @@ export function TargetOverviewPanel({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SurfaceCard className="px-5 py-4">
-          <SubsectionLabel infoKey="target.planBase">
+          <SubsectionLabel>
             Plan base · {data.year}
           </SubsectionLabel>
           <div className="space-y-2">
@@ -181,7 +181,7 @@ export function TargetOverviewPanel({
         </SurfaceCard>
 
         <SurfaceCard className="px-5 py-4">
-          <SubsectionLabel infoKey="target.incomePace">Income pace · YTD</SubsectionLabel>
+          <SubsectionLabel>Income pace · YTD</SubsectionLabel>
           <div className="space-y-2">
             <OverviewRow
               label="Planned income YTD"
@@ -209,7 +209,7 @@ export function TargetOverviewPanel({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SurfaceCard className="px-5 py-4">
-          <SubsectionLabel infoKey="target.planCheck">Plan check</SubsectionLabel>
+          <SubsectionLabel>Plan check</SubsectionLabel>
           <div className="space-y-3">
             <div>
               <OverviewRow
@@ -231,7 +231,7 @@ export function TargetOverviewPanel({
         </SurfaceCard>
 
         <SurfaceCard className="px-5 py-4">
-          <SubsectionLabel infoKey="target.spendingSavingsYtd">
+          <SubsectionLabel>
             Spending & savings · YTD
           </SubsectionLabel>
           <div className="space-y-2">

@@ -2,7 +2,7 @@
 
 Personal finance app for tracking bank imports, monthly spending, savings targets, commitments, and net worth. Built for multi-account households (UYU + USD) with Santander Uruguay CSV imports, manual fixes, and optional AI-assisted categorization.
 
-Each main screen includes an **info** button next to section titles; copy lives in `src/lib/help/section-info.ts`.
+Each main screen has one **info** button (next to the page title or month navigator); help copy lives in `src/lib/help/section-info.ts`.
 
 ## What it does
 
@@ -123,7 +123,7 @@ npm run build
 7. **Control** — Track rent, salary, subscriptions; reconcile to real movements.
 8. **Wealth** — Net worth = tracked cash + manual positions; review transfer breakdown.
 
-**Incognito mode** (Settings) hides sensitive amounts in the UI without changing stored data.
+**Incognito mode** (menu, above Settings) hides sensitive amounts in the UI without changing stored data. **Dark mode** is in the same menu; preference is stored in the browser.
 
 ## CSV imports
 

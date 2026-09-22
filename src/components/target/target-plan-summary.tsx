@@ -67,7 +67,7 @@ export function TargetPlanSummary({
   return (
     <div className="space-y-2">
       <SurfaceCard className="px-5 py-4">
-        <SubsectionLabel infoKey="target.planSummary">
+        <SubsectionLabel>
           Plan · {periodLabel}
         </SubsectionLabel>
 

@@ -13,6 +13,7 @@ import {
   SECTION_INFO,
   type SectionInfoKey,
 } from "@/lib/help/section-info";
+import { fx } from "@/lib/design/fx-classes";
 import { cn } from "@/lib/utils";
 
 export function SectionInfoButton({
@@ -35,11 +36,11 @@ export function SectionInfoButton({
         className={cn(
           "inline-flex shrink-0 items-center justify-center rounded-full transition-colors",
           variant === "default" &&
-            "size-8 text-[#9E9AB0] hover:bg-[#F3F1F9] hover:text-[#6C3FD1]",
+            cn("size-8", fx.subtle, "hover:bg-fx-accent-soft hover:text-fx-accent-text"),
           variant === "onDark" &&
             "size-7 text-white/70 hover:bg-white/15 hover:text-white",
           variant === "subtle" &&
-            "size-7 text-[#C7C3D6] hover:text-[#6C3FD1]",
+            cn("size-7", fx.faint, "hover:text-fx-accent-text"),
           className
         )}
         aria-label={`About ${info.title}`}
@@ -48,15 +49,27 @@ export function SectionInfoButton({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-[26px] border-[#F1EFF7] sm:max-w-md">
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[26px] border-fx-line bg-fx-panel sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[20px] font-extrabold text-[#1C1B29]">
+            <DialogTitle className={cn("text-[20px] font-extrabold", fx.ink)}>
               {info.title}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-sm font-semibold leading-relaxed text-[#6E6B82]">
-            {info.paragraphs.map((paragraph) => (
+          <div className={cn("space-y-4 text-sm font-semibold leading-relaxed", fx.muted)}>
+            {info.paragraphs?.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
+            ))}
+            {info.sections?.map((section) => (
+              <div key={section.title}>
+                <h3 className={cn("text-[13px] font-extrabold uppercase tracking-wide", fx.ink)}>
+                  {section.title}
+                </h3>
+                <div className="mt-2 space-y-2">
+                  {section.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </DialogContent>
@@ -76,7 +89,7 @@ export function PageTitleWithInfo({
 }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <h1 className="text-[26px] font-extrabold text-[#1C1B29]">{title}</h1>
+      <h1 className={cn("text-[26px] font-extrabold", fx.ink)}>{title}</h1>
       <SectionInfoButton infoKey={infoKey} />
     </div>
   );
@@ -84,52 +97,44 @@ export function PageTitleWithInfo({
 
 export function SectionTitle({
   children,
-  infoKey,
   className,
 }: {
   children: React.ReactNode;
-  infoKey?: SectionInfoKey;
   className?: string;
 }) {
   return (
-    <div className={cn("mb-4 flex items-start gap-1", className)}>
-      <h2 className="min-w-0 flex-1 text-lg font-extrabold tracking-tight text-[#1C1B29]">
-        {children}
-      </h2>
-      {infoKey ? <SectionInfoButton infoKey={infoKey} /> : null}
-    </div>
+    <h2
+      className={cn(
+        "mb-4 text-lg font-extrabold tracking-tight",
+        fx.ink,
+        className
+      )}
+    >
+      {children}
+    </h2>
   );
 }
 
 export function SubsectionLabel({
   children,
-  infoKey,
   className,
   tone = "muted",
 }: {
   children: React.ReactNode;
-  infoKey?: SectionInfoKey;
   className?: string;
   tone?: "muted" | "hero" | "card";
 }) {
   return (
-    <div className={cn("mb-3 flex items-start gap-1", className)}>
-      <p
-        className={cn(
-          "min-w-0 flex-1 text-[12px] font-bold uppercase tracking-wide",
-          tone === "hero" && "text-white opacity-75",
-          tone === "muted" && "text-[#9E9AB0]",
-          tone === "card" && "text-[#9E9AB0]"
-        )}
-      >
-        {children}
-      </p>
-      {infoKey ? (
-        <SectionInfoButton
-          infoKey={infoKey}
-          variant={tone === "hero" ? "onDark" : "subtle"}
-        />
-      ) : null}
-    </div>
+    <p
+      className={cn(
+        "mb-3 text-[12px] font-bold uppercase tracking-wide",
+        tone === "hero" && "text-white opacity-75",
+        tone === "muted" && fx.subtle,
+        tone === "card" && fx.subtle,
+        className
+      )}
+    >
+      {children}
+    </p>
   );
 }

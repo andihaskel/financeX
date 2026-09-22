@@ -57,7 +57,7 @@ export default async function WealthPage() {
       <PageTitleWithInfo title="Wealth" infoKey="wealth.page" />
 
       <GradientHero className="px-6 py-5">
-        <SubsectionLabel infoKey="wealth.netWorth" tone="hero" className="mb-1">
+        <SubsectionLabel tone="hero" className="mb-1">
           Net worth
         </SubsectionLabel>
         <p className="text-[32px] font-extrabold tabular-nums">{formatMoney(totalNetWorthUsd)}</p>
@@ -78,7 +78,7 @@ export default async function WealthPage() {
       {showTransferStats ? (
         <SurfaceCard className="px-5 py-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <SectionTitle infoKey="wealth.transfers" className="mb-3">
+            <SectionTitle className="mb-0">
               Transfers · {flow.year}
             </SectionTitle>
             {flow.unclassifiedOutCount > 0 ? (

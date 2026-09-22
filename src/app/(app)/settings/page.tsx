@@ -2,9 +2,8 @@ import Link from "next/link";
 
 import { signOut } from "@/app/actions/auth";
 import { RulesTable } from "@/components/rules/rules-table";
-import { IncognitoSettingsToggle } from "@/components/privacy/incognito-settings-toggle";
 import { SettingsForm } from "@/components/settings/settings-form";
-import { SurfaceCard } from "@/components/ui/surface";
+import { PageTitleWithInfo, SurfaceCard } from "@/components/ui/surface";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type {
   Account,
@@ -113,7 +112,7 @@ export default async function SettingsPage({
   if (!section) {
     return (
       <div className="space-y-6">
-        <h1 className="text-[26px] font-extrabold">Settings</h1>
+        <PageTitleWithInfo title="Settings" infoKey="settings.page" />
         <SurfaceCard className="px-6 py-1">
           {items.map((item, index) => (
             <Link
@@ -131,13 +130,9 @@ export default async function SettingsPage({
         </SurfaceCard>
 
         <SurfaceCard className="px-6 py-1">
-          <IncognitoSettingsToggle />
-        </SurfaceCard>
-
-        <SurfaceCard className="px-6 py-1">
           <Link
             href="/apps"
-            className="flex items-center gap-2 border-b border-[#F1EFF7] py-4"
+            className="flex items-center gap-2 border-b border-[#F1EFF7] py-4 dark:border-white/10"
           >
             <span className="text-sm font-bold">Go to Your space</span>
             <span className="text-[13px] font-semibold text-[#6E6B82]">
@@ -177,7 +172,7 @@ export default async function SettingsPage({
         >
           ← Settings
         </Link>
-        <h1 className="mt-2 text-[26px] font-extrabold">{sectionTitle}</h1>
+        <PageTitleWithInfo title={sectionTitle} infoKey="settings.page" className="mt-2" />
       </div>
 
       {section === "rules" ? (

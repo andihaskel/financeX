@@ -29,12 +29,12 @@ export default async function TargetOverviewPage({
 
   return (
     <div className="space-y-5">
-      <TargetScopeNav />
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
         <PageTitleWithInfo title="Plan overview" infoKey="target.pageOverview" className="sm:mr-auto" />
         <TargetYearNav year={year} basePath="/target" />
       </div>
+
+      <TargetScopeNav />
 
       <p className="text-sm font-semibold text-[#6E6B82]">
         Planned income from Settings vs what actually hit your accounts in {year}. Category

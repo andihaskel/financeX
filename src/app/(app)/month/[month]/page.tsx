@@ -218,7 +218,7 @@ export default async function MonthPage({
         </SurfaceCard>
       </div>
 
-      <SectionTitle infoKey="month.whereMoneyWent">Where your money went</SectionTitle>
+      <SectionTitle>Where your money went</SectionTitle>
       <SurfaceCard className="px-6 py-4">
         {budgets.length === 0 ? (
           <p className="py-6 text-center text-sm font-semibold text-[#6E6B82]">
@@ -243,7 +243,7 @@ export default async function MonthPage({
         )}
       </SurfaceCard>
 
-      <SectionTitle infoKey="month.recentMovements">Recent movements</SectionTitle>
+      <SectionTitle>Recent movements</SectionTitle>
       <SurfaceCard className="px-6 py-1">
         {recent.map((tx) => {
           const visual = getCategoryVisual(tx.categories?.slug);

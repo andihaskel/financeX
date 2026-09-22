@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { manrope } from "@/lib/design/fonts";
 
@@ -18,10 +19,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${manrope.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#F3F1F9] font-[family-name:var(--font-manrope)] text-[#1C1B29]">
-        {children}
-        <Toaster />
+    <html lang="en" className={`${manrope.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="flex min-h-full flex-col bg-background font-[family-name:var(--font-manrope)] text-foreground">
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

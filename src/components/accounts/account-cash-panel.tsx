@@ -174,7 +174,7 @@ export function AccountCashPanel({
     <>
       <SurfaceCard className="px-5 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <SectionTitle infoKey="wealth.cashInAccounts">Cash in accounts</SectionTitle>
+          <SectionTitle>Cash in accounts</SectionTitle>
           <AddAccountButton />
         </div>
 

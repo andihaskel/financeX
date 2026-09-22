@@ -35,12 +35,12 @@ export default async function AnnualTargetPage({
 
   return (
     <div className="space-y-5">
-      <TargetScopeNav />
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
         <PageTitleWithInfo title="Annual target" infoKey="target.annualPage" className="sm:mr-auto" />
         <TargetYearNav year={year} />
       </div>
+
+      <TargetScopeNav />
 
       <p className="text-sm font-semibold text-[#6E6B82]">
         Category budgets for {year}. Bars show year-to-date spending; edit annual targets on

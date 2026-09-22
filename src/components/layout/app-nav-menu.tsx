@@ -8,14 +8,13 @@ import {
   isNavActive,
   settingsNavItem,
 } from "@/components/layout/nav-items";
+import { fx } from "@/lib/design/fx-classes";
 import { cn } from "@/lib/utils";
 
 const linkClassName = (active: boolean) =>
   cn(
     "flex items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-[15px] transition-colors",
-    active
-      ? "bg-[#F3F1F9] font-bold text-[#6C3FD1]"
-      : "font-medium text-[#6E6B82] hover:bg-[#F3F1F9]/60"
+    active ? fx.activeNav : fx.navItem
   );
 
 export function AppNavMenu({ onNavigate }: { onNavigate?: () => void }) {
