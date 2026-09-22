@@ -3,6 +3,7 @@ import { TargetBudgetForm } from "@/components/target/target-budget-form";
 import { TargetMonthNav } from "@/components/target/target-month-nav";
 import { TargetPlanSummary } from "@/components/target/target-plan-summary";
 import { TargetScopeNav } from "@/components/target/target-scope-nav";
+import { PageTitleWithInfo } from "@/components/ui/surface";
 import { getTargetBudgets, getTargetSummary, getBudgetComparison } from "@/lib/queries/finance";
 import { resolveViewMonth } from "@/lib/queries/month";
 
@@ -26,7 +27,7 @@ export default async function MonthlyTargetPage({
       <TargetScopeNav />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
-        <h1 className="text-[26px] font-extrabold sm:mr-auto">Monthly target</h1>
+        <PageTitleWithInfo title="Monthly target" infoKey="target.monthlyPage" className="sm:mr-auto" />
         <TargetMonthNav month={month} />
       </div>
 

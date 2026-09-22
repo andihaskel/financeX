@@ -1,6 +1,7 @@
 import { TargetOverviewPanel } from "@/components/target/target-overview";
 import { TargetScopeNav } from "@/components/target/target-scope-nav";
 import { TargetYearNav } from "@/components/target/target-year-nav";
+import { PageTitleWithInfo } from "@/components/ui/surface";
 import { getTargetOverview } from "@/lib/queries/finance";
 import { getAccountCashSummary } from "@/lib/queries/account-cash";
 import { getWealthSummary } from "@/lib/queries/wealth";
@@ -31,7 +32,7 @@ export default async function TargetOverviewPage({
       <TargetScopeNav />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
-        <h1 className="text-[26px] font-extrabold sm:mr-auto">Plan overview</h1>
+        <PageTitleWithInfo title="Plan overview" infoKey="target.pageOverview" className="sm:mr-auto" />
         <TargetYearNav year={year} basePath="/target" />
       </div>
 

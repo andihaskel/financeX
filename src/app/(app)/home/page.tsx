@@ -83,7 +83,7 @@ export default async function HomePage({
         </div>
       </GradientHero>
 
-      <SectionTitle>Your months</SectionTitle>
+      <SectionTitle infoKey="home.yourMonths">Your months</SectionTitle>
       <HomeMonthTiles
         year={year}
         months={summary.months}
@@ -91,12 +91,12 @@ export default async function HomePage({
         currentMonth={currentMonth}
       />
 
-      <SectionTitle>The year at a glance</SectionTitle>
+      <SectionTitle infoKey="home.yearAtGlance">The year at a glance</SectionTitle>
       <SurfaceCard>
         <YearChart months={summary.months} />
       </SurfaceCard>
 
-      <SectionTitle>A few things about your year</SectionTitle>
+      <SectionTitle infoKey="home.yearFacts">A few things about your year</SectionTitle>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3.5">
         {[
           ["Average monthly spending", formatMoney(summary.avgSpending)],
@@ -119,7 +119,7 @@ export default async function HomePage({
 
       {budgetComparison.length > 0 && (
         <>
-          <SectionTitle>Where your money went</SectionTitle>
+          <SectionTitle infoKey="home.whereMoneyWent">Where your money went</SectionTitle>
           <SurfaceCard className="px-4 py-4 sm:px-6">
             <SpendingBreakdown
               slices={slicesFromBudgetRows(

@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+export { PageTitleWithInfo, SectionInfoButton, SectionTitle, SubsectionLabel } from "@/components/ui/section-info-dialog";
+
 export function SurfaceCard({
   className,
   children,
@@ -16,25 +18,6 @@ export function SurfaceCard({
     >
       {children}
     </div>
-  );
-}
-
-export function SectionTitle({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <h2
-      className={cn(
-        "mb-4 text-lg font-extrabold tracking-tight text-[#1C1B29]",
-        className
-      )}
-    >
-      {children}
-    </h2>
   );
 }
 

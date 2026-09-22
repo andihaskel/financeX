@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateAnnualBudgets, updateBudgets } from "@/app/actions/settings";
-import { CategoryChip, PrimaryButton, SurfaceCard } from "@/components/ui/surface";
+import { CategoryChip, PrimaryButton, SurfaceCard, SubsectionLabel } from "@/components/ui/surface";
 import { formatMoney } from "@/lib/design/format";
 import { getCategoryVisual } from "@/lib/design/theme";
 import { cn } from "@/lib/utils";
@@ -68,6 +68,7 @@ export function TargetBudgetForm(props: TargetBudgetFormProps) {
       }}
       className="space-y-6"
     >
+      <SubsectionLabel infoKey="target.categoryBudgets">Category budgets</SubsectionLabel>
       <SurfaceCard className="px-5 py-1">
         {data.map((row) => {
           const visual = getCategoryVisual(row.slug);

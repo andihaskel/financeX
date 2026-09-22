@@ -4,6 +4,7 @@ import { TargetBudgetForm } from "@/components/target/target-budget-form";
 import { TargetPlanSummary } from "@/components/target/target-plan-summary";
 import { TargetScopeNav } from "@/components/target/target-scope-nav";
 import { TargetYearNav } from "@/components/target/target-year-nav";
+import { PageTitleWithInfo } from "@/components/ui/surface";
 import {
   getAnnualBudgetComparison,
   getAnnualTargetBudgets,
@@ -37,7 +38,7 @@ export default async function AnnualTargetPage({
       <TargetScopeNav />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
-        <h1 className="text-[26px] font-extrabold sm:mr-auto">Annual target</h1>
+        <PageTitleWithInfo title="Annual target" infoKey="target.annualPage" className="sm:mr-auto" />
         <TargetYearNav year={year} />
       </div>
 

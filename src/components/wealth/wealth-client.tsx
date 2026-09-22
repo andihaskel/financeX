@@ -56,7 +56,7 @@ export function WealthClient({
     <>
       <SurfaceCard className="px-5 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <SectionTitle>Positions</SectionTitle>
+          <SectionTitle infoKey="wealth.positions">Positions</SectionTitle>
           <AddWealthPositionButton accounts={accounts} />
         </div>
 

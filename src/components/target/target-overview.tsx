@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { GradientHero, SurfaceCard } from "@/components/ui/surface";
+import { GradientHero, SubsectionLabel, SurfaceCard } from "@/components/ui/surface";
 import { formatMoney, formatPercent, formatSignedDelta } from "@/lib/design/format";
 import type { TargetOverviewData } from "@/lib/queries/finance";
 import { cn } from "@/lib/utils";
@@ -82,9 +82,9 @@ export function TargetOverviewPanel({
   return (
     <div className="space-y-4">
       <GradientHero className="px-6 py-5">
-        <p className="mb-1 text-[12px] font-bold uppercase tracking-wide opacity-75">
+        <SubsectionLabel infoKey="target.globalIncome" tone="hero" className="mb-1">
           Global income · {data.year}
-        </p>
+        </SubsectionLabel>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <p className="text-[13px] font-semibold opacity-80">Planned (year)</p>
@@ -126,9 +126,9 @@ export function TargetOverviewPanel({
 
       <SurfaceCard className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
+          <SubsectionLabel infoKey="target.netWorthTracked">
             Net worth tracked
-          </p>
+          </SubsectionLabel>
           <p className="mt-1 text-lg font-extrabold tabular-nums">
             {formatMoney(wealthTotalUsd + cashTotalUsd)}
           </p>
@@ -147,9 +147,9 @@ export function TargetOverviewPanel({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SurfaceCard className="px-5 py-4">
-          <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
+          <SubsectionLabel infoKey="target.planBase">
             Plan base · {data.year}
-          </p>
+          </SubsectionLabel>
           <div className="space-y-2">
             <OverviewRow
               label="Expected income / month"
@@ -181,9 +181,7 @@ export function TargetOverviewPanel({
         </SurfaceCard>
 
         <SurfaceCard className="px-5 py-4">
-          <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
-            Income pace · YTD
-          </p>
+          <SubsectionLabel infoKey="target.incomePace">Income pace · YTD</SubsectionLabel>
           <div className="space-y-2">
             <OverviewRow
               label="Planned income YTD"
@@ -211,9 +209,7 @@ export function TargetOverviewPanel({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SurfaceCard className="px-5 py-4">
-          <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
-            Plan check
-          </p>
+          <SubsectionLabel infoKey="target.planCheck">Plan check</SubsectionLabel>
           <div className="space-y-3">
             <div>
               <OverviewRow
@@ -235,9 +231,9 @@ export function TargetOverviewPanel({
         </SurfaceCard>
 
         <SurfaceCard className="px-5 py-4">
-          <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
+          <SubsectionLabel infoKey="target.spendingSavingsYtd">
             Spending & savings · YTD
-          </p>
+          </SubsectionLabel>
           <div className="space-y-2">
             <OverviewRow label="Spent YTD" value={formatMoney(data.actualSpentYtd)} />
             <OverviewRow

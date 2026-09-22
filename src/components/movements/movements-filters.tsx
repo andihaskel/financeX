@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import { MonthTitlePicker } from "@/components/shared/month-title-picker";
 import { AddMovementsButton } from "@/components/layout/floating-add-button";
+import { PageTitleWithInfo } from "@/components/ui/surface";
 import { getAccountDisplayName } from "@/lib/accounts/helpers";
 import {
   categoriesForTransactionType,
@@ -103,7 +104,7 @@ export function MovementsFilters({
         </Link>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5">
-        <h1 className="text-[26px] font-extrabold sm:mr-auto">Movements</h1>
+        <PageTitleWithInfo title="Movements" infoKey="movements.page" className="sm:mr-auto" />
         <div className="flex flex-wrap items-center gap-2.5">
           {viewingYear ? (
             <span className="text-[15px] font-bold text-[#6E6B82]">{year}</span>

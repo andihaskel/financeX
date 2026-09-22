@@ -214,7 +214,7 @@ export function MonthDataPanel({
 
   return (
     <div>
-      <SectionTitle>This month&apos;s data</SectionTitle>
+      <SectionTitle infoKey="month.thisMonthsData">This month&apos;s data</SectionTitle>
       <SurfaceCard className="px-5 py-1">
         {accounts.map((account) => (
           <div

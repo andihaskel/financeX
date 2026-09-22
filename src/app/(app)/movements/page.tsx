@@ -1,6 +1,6 @@
 import { OpenImportButton } from "@/components/home/open-import-button";
 import { MovementsBrowser } from "@/components/movements/movements-browser";
-import { SurfaceCard } from "@/components/ui/surface";
+import { PageTitleWithInfo, SurfaceCard } from "@/components/ui/surface";
 import { getAccounts, getCategories } from "@/lib/queries/finance";
 import { hasAnyTransactions, resolveViewMonth } from "@/lib/queries/month";
 import { getWealthSummary } from "@/lib/queries/wealth";
@@ -82,7 +82,7 @@ export default async function MovementsPage({
   if (!anyTransactions) {
     return (
       <div className="space-y-4">
-        <h1 className="text-[26px] font-extrabold">Movements</h1>
+        <PageTitleWithInfo title="Movements" infoKey="movements.page" />
         <SurfaceCard className="px-10 py-14 text-center">
           <p className="text-base font-bold">Nothing here yet.</p>
           <p className="mt-2 text-sm font-semibold text-[#6E6B82]">
@@ -103,7 +103,7 @@ export default async function MovementsPage({
 
     return (
       <div className="space-y-4">
-        <h1 className="text-[26px] font-extrabold">Movements</h1>
+        <PageTitleWithInfo title="Movements" infoKey="movements.page" />
         <SurfaceCard className="px-8 py-10 text-center">
           <p className="font-bold">Could not load movements.</p>
           <p className="mt-2 text-sm font-semibold text-[#6E6B82]">

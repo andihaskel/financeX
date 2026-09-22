@@ -28,7 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SurfaceCard } from "@/components/ui/surface";
+import { SurfaceCard, PageTitleWithInfo, SectionInfoButton } from "@/components/ui/surface";
+import type { SectionInfoKey } from "@/lib/help/section-info";
 import {
   nextAnnualDueLabel,
   isCommitmentActiveInMonth,
@@ -772,6 +773,7 @@ function CommitmentRow({
 function CommitmentSection({
   title,
   subtitle,
+  infoKey,
   rows,
   year,
   month,
@@ -783,6 +785,7 @@ function CommitmentSection({
 }: {
   title: string;
   subtitle: string;
+  infoKey?: SectionInfoKey;
   rows: ControlRow[];
   year: number;
   month: number;
@@ -795,7 +798,10 @@ function CommitmentSection({
   return (
     <SurfaceCard className="!px-5 !py-1">
       <div className="flex items-baseline justify-between border-b border-[#F1EFF7] py-[9px]">
-        <p className="text-[13px] font-extrabold text-[#1C1B29] tabular-nums">{title}</p>
+        <div className="flex min-w-0 items-center gap-1">
+          <p className="text-[13px] font-extrabold text-[#1C1B29] tabular-nums">{title}</p>
+          {infoKey ? <SectionInfoButton infoKey={infoKey} variant="subtle" /> : null}
+        </div>
         <p className="text-xs font-bold text-[#1C1B29] tabular-nums">{subtitle}</p>
       </div>
       {rows.length === 0 ? (
@@ -1115,6 +1121,8 @@ export function ControlClient({
 
   return (
     <div className="space-y-4">
+      <PageTitleWithInfo title="Control" infoKey="control.overview" />
+
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex items-center gap-3.5">
           <Link href={`/control?month=${prev}`} className="text-base text-[#6E6B82]">
@@ -1212,6 +1220,7 @@ export function ControlClient({
           <CommitmentSection
             title={`Pay · ${payRemainingLabel || "UYU 0"} pending`}
             subtitle={`${payDone} of ${payRows.length} done`}
+            infoKey="control.pay"
             rows={payRows}
             year={year}
             month={month}
@@ -1227,6 +1236,7 @@ export function ControlClient({
           <CommitmentSection
             title={`Receive · ${receiveRemainingLabel || "USD 0"} pending`}
             subtitle={`${receiveDone} of ${receiveRows.length} received`}
+            infoKey="control.receive"
             rows={receiveRows}
             year={year}
             month={month}

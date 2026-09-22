@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { WealthClient } from "@/components/wealth/wealth-client";
 import { AccountCashPanel } from "@/components/accounts/account-cash-panel";
-import { GradientHero, SectionTitle, SurfaceCard } from "@/components/ui/surface";
+import { GradientHero, PageTitleWithInfo, SectionTitle, SubsectionLabel, SurfaceCard } from "@/components/ui/surface";
 import { formatMoney } from "@/lib/design/format";
 import { buildMovementsHref } from "@/lib/navigation/return-to";
 import { getAccountCashSummary } from "@/lib/queries/account-cash";
@@ -54,10 +54,12 @@ export default async function WealthPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-[26px] font-extrabold">Wealth</h1>
+      <PageTitleWithInfo title="Wealth" infoKey="wealth.page" />
 
       <GradientHero className="px-6 py-5">
-        <p className="mb-1 text-[12px] font-bold uppercase tracking-wide opacity-75">Net worth</p>
+        <SubsectionLabel infoKey="wealth.netWorth" tone="hero" className="mb-1">
+          Net worth
+        </SubsectionLabel>
         <p className="text-[32px] font-extrabold tabular-nums">{formatMoney(totalNetWorthUsd)}</p>
         <div className="mt-4 flex flex-wrap gap-6 text-sm font-semibold opacity-90">
           <span>
@@ -76,7 +78,9 @@ export default async function WealthPage() {
       {showTransferStats ? (
         <SurfaceCard className="px-5 py-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <SectionTitle>Transfers · {flow.year}</SectionTitle>
+            <SectionTitle infoKey="wealth.transfers" className="mb-3">
+              Transfers · {flow.year}
+            </SectionTitle>
             {flow.unclassifiedOutCount > 0 ? (
               <Link
                 href={buildMovementsHref({

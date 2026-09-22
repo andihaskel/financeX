@@ -42,7 +42,7 @@ export function SettingsForm({
       {showGeneral && (
         <>
           <SurfaceCard>
-            <SectionTitle>Currency</SectionTitle>
+            <SectionTitle infoKey="settings.currency">Currency</SectionTitle>
           <form
             action={(formData) => {
               startTransition(async () => {
@@ -76,7 +76,7 @@ export function SettingsForm({
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionTitle>Savings target</SectionTitle>
+            <SectionTitle infoKey="settings.savingsTarget">Savings target</SectionTitle>
           <form
             action={(formData) => {
               startTransition(async () => {
@@ -106,7 +106,7 @@ export function SettingsForm({
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionTitle>Income sources</SectionTitle>
+            <SectionTitle infoKey="settings.incomeSources">Income sources</SectionTitle>
             <div className="space-y-4">
           {incomeSources.map((source) => (
             <form
@@ -147,7 +147,7 @@ export function SettingsForm({
 
       {showAccounts && (
         <SurfaceCard>
-          <SectionTitle>Accounts</SectionTitle>
+          <SectionTitle infoKey="settings.accounts">Accounts</SectionTitle>
           <div className="space-y-4">
           {accounts.map((account) => (
             <div key={account.id} className="rounded-[16px] border border-[#F1EFF7] p-4">
@@ -208,7 +208,7 @@ export function SettingsForm({
 
       {showCategories && (
         <SurfaceCard>
-          <SectionTitle>Categories</SectionTitle>
+          <SectionTitle infoKey="settings.categories">Categories</SectionTitle>
           <div className="space-y-3">
           {categories.map((category) => (
             <form

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { SurfaceCard } from "@/components/ui/surface";
+import { SurfaceCard, SubsectionLabel } from "@/components/ui/surface";
 import { formatMoney, formatPercent } from "@/lib/design/format";
 import { cn } from "@/lib/utils";
 
@@ -67,9 +67,9 @@ export function TargetPlanSummary({
   return (
     <div className="space-y-2">
       <SurfaceCard className="px-5 py-4">
-        <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#9E9AB0]">
+        <SubsectionLabel infoKey="target.planSummary">
           Plan · {periodLabel}
-        </p>
+        </SubsectionLabel>
 
         <div className="space-y-2">
           <SummaryRow
