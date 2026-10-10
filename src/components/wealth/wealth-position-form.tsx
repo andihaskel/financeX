@@ -36,7 +36,10 @@ export function WealthPositionForm({
   onSubmit: (values: WealthPositionFormValues) => void;
 }) {
   const [name, setName] = useState(initialValues?.name ?? "");
-  const [kind, setKind] = useState<WealthPositionKind>(initialValues?.kind ?? "other");
+  const [kind, setKind] = useState<WealthPositionKind>(() => {
+    const initial = initialValues?.kind ?? "other";
+    return initial === "investment" ? "equity" : initial;
+  });
   const [amount, setAmount] = useState(
     initialValues?.amount !== undefined ? String(initialValues.amount) : "0"
   );

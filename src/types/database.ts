@@ -34,6 +34,8 @@ export type WealthPositionKind =
   | "cash"
   | "checking"
   | "savings"
+  | "fixed_income"
+  | "equity"
   | "investment"
   | "other";
 

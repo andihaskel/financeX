@@ -16,10 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { WealthAllocationDonut } from "@/components/charts/wealth-allocation-donut";
 import { SectionTitle, SurfaceCard } from "@/components/ui/surface";
 import { formatMoney } from "@/lib/design/format";
 import { buildMovementsHref } from "@/lib/navigation/return-to";
+import type { DonutSlice } from "@/lib/spending/donut-slices";
 import type { WealthPositionRow } from "@/lib/queries/wealth";
+import { cn } from "@/lib/utils";
 import { wealthKindLabel } from "@/lib/wealth/helpers";
 import type { Account } from "@/types/database";
 
@@ -27,10 +30,14 @@ export function WealthClient({
   positions,
   accounts,
   year,
+  allocationSlices,
+  totalNetWorthUsd,
 }: {
   positions: WealthPositionRow[];
   accounts: Account[];
   year: number;
+  allocationSlices: DonutSlice[];
+  totalNetWorthUsd: number;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -52,70 +59,100 @@ export function WealthClient({
     });
   }
 
+  const showAllocation = allocationSlices.some((slice) => slice.value > 0);
+
   return (
     <>
       <SurfaceCard className="px-5 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <SectionTitle className="mb-0">Positions</SectionTitle>
+          <SectionTitle className="mb-0">
+            {showAllocation ? "Allocation" : "Positions"}
+          </SectionTitle>
           <AddWealthPositionButton accounts={accounts} />
         </div>
 
-        {positions.length === 0 ? (
-          <p className="py-6 text-center text-sm font-semibold text-[#6E6B82]">No positions yet</p>
-        ) : (
-          <div className="divide-y divide-[#F1EFF7]">
-            {positions.map((position) => (
-              <div
-                key={position.id}
-                className="flex items-center gap-2 py-3 first:pt-0 last:pb-0"
-              >
-                <Link
-                  href={buildMovementsHref({
-                    year,
-                    wealthPositionId: position.id,
-                    returnTo: "/wealth",
-                  })}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] py-1 pr-1 transition-colors hover:bg-[#FAF9FC]"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold">{position.name}</p>
-                    <p className="truncate text-xs font-semibold text-[#9E9AB0]">
-                      {wealthKindLabel(position.kind)}
-                      {position.accountName ? ` · ${position.accountName}` : ""}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm font-extrabold tabular-nums">
-                      {formatMoney(position.amountUsd)}
-                    </p>
-                    <p className="text-[11px] font-semibold text-[#9E9AB0] tabular-nums">
-                      {position.currency} {Math.round(position.amount).toLocaleString("en-US")}
-                    </p>
-                  </div>
-                  <ChevronRight className="size-4 shrink-0 text-[#C4B5FD]" />
-                </Link>
-                <div className="flex shrink-0 gap-0.5">
-                  <button
-                    type="button"
-                    aria-label={`Edit ${position.name}`}
-                    onClick={() => setEditing(position)}
-                    className="inline-flex size-9 items-center justify-center rounded-full text-[#9E9AB0] transition-colors hover:bg-[#F3F1F9] hover:text-[#6C3FD1]"
+        <div
+          className={cn(
+            "grid gap-6",
+            showAllocation && "lg:grid-cols-[240px_1fr] lg:items-start"
+          )}
+        >
+          {showAllocation ? (
+            <WealthAllocationDonut
+              slices={allocationSlices}
+              totalUsd={totalNetWorthUsd}
+              className="mx-auto w-full max-w-[280px] lg:mx-0"
+            />
+          ) : null}
+
+          <div className="min-w-0">
+            {showAllocation ? (
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#9E9AB0]">
+                Positions
+              </p>
+            ) : null}
+
+            {positions.length === 0 ? (
+              <p className="py-6 text-center text-sm font-semibold text-[#6E6B82]">
+                No positions yet
+              </p>
+            ) : (
+              <div className="divide-y divide-[#F1EFF7]">
+                {positions.map((position) => (
+                  <div
+                    key={position.id}
+                    className="flex items-center gap-2 py-3 first:pt-0 last:pb-0"
                   >
-                    <Pencil className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${position.name}`}
-                    onClick={() => setDeleting(position)}
-                    className="inline-flex size-9 items-center justify-center rounded-full text-[#9E9AB0] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444]"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
+                    <Link
+                      href={buildMovementsHref({
+                        year,
+                        wealthPositionId: position.id,
+                        returnTo: "/wealth",
+                      })}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] py-1 pr-1 transition-colors hover:bg-[#FAF9FC]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-extrabold">{position.name}</p>
+                        <p className="truncate text-xs font-semibold text-[#9E9AB0]">
+                          {wealthKindLabel(position.kind)}
+                          {position.accountName ? ` · ${position.accountName}` : ""}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-extrabold tabular-nums">
+                          {formatMoney(position.amountUsd)}
+                        </p>
+                        <p className="text-[11px] font-semibold text-[#9E9AB0] tabular-nums">
+                          {position.currency}{" "}
+                          {Math.round(position.amount).toLocaleString("en-US")}
+                        </p>
+                      </div>
+                      <ChevronRight className="size-4 shrink-0 text-[#C4B5FD]" />
+                    </Link>
+                    <div className="flex shrink-0 gap-0.5">
+                      <button
+                        type="button"
+                        aria-label={`Edit ${position.name}`}
+                        onClick={() => setEditing(position)}
+                        className="inline-flex size-9 items-center justify-center rounded-full text-[#9E9AB0] transition-colors hover:bg-[#F3F1F9] hover:text-[#6C3FD1]"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${position.name}`}
+                        onClick={() => setDeleting(position)}
+                        className="inline-flex size-9 items-center justify-center rounded-full text-[#9E9AB0] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444]"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </SurfaceCard>
 
       {editing ? (

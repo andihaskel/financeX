@@ -8,6 +8,7 @@ import { buildMovementsHref } from "@/lib/navigation/return-to";
 import { getAccountCashSummary } from "@/lib/queries/account-cash";
 import { getActiveAccounts } from "@/lib/queries/finance";
 import { getWealthFlowSummary, getWealthSummary } from "@/lib/queries/wealth";
+import { buildWealthAllocationSlices } from "@/lib/wealth/allocation-slices";
 
 function TransferStat({
   label,
@@ -46,6 +47,10 @@ export default async function WealthPage() {
   ]);
 
   const totalNetWorthUsd = wealth.totalUsd + cash.totalUsd;
+  const allocationSlices = buildWealthAllocationSlices({
+    accountCashUsd: cash.totalUsd,
+    positions: wealth.positions,
+  });
   const showTransferStats =
     flow.unclassifiedOutCount > 0 ||
     flow.toPositionsUsd > 0 ||
@@ -111,7 +116,13 @@ export default async function WealthPage() {
         </SurfaceCard>
       ) : null}
 
-      <WealthClient positions={wealth.positions} accounts={accounts} year={year} />
+      <WealthClient
+        positions={wealth.positions}
+        accounts={accounts}
+        year={year}
+        allocationSlices={allocationSlices}
+        totalNetWorthUsd={totalNetWorthUsd}
+      />
     </div>
   );
 }

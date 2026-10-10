@@ -111,9 +111,15 @@ export const SECTION_INFO: Record<SectionInfoKey, SectionInfoContent> = {
         ],
       },
       {
+        title: "Allocation",
+        paragraphs: [
+          "Donut of net worth: bank cash, renta fija, renta variable, and other positions.",
+        ],
+      },
+      {
         title: "Positions",
         paragraphs: [
-          "Manual holdings (funds, fixed income, etc.) in native currency with USD in the total.",
+          "Manual holdings tagged as renta fija, renta variable, or other, in native currency with USD in the total.",
         ],
       },
     ],
