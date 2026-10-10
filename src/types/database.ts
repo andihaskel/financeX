@@ -174,6 +174,15 @@ export interface MonthlyBudget {
   currency: Currency;
 }
 
+export interface MonthNote {
+  id: string;
+  user_id: string;
+  month: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AnnualBudget {
   id: string;
   user_id: string;
@@ -481,6 +490,25 @@ export interface Database {
           month?: string;
           budget_amount?: number;
           currency?: Currency;
+        };
+        Relationships: [];
+      };
+      month_notes: {
+        Row: MonthNote;
+        Insert: {
+          id?: string;
+          user_id: string;
+          month: string;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          month?: string;
+          body?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };

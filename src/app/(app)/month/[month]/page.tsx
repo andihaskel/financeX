@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { OpenImportButton } from "@/components/home/open-import-button";
 import { AddMovementsButton } from "@/components/layout/floating-add-button";
 import { MonthDataPanel } from "@/components/month/month-data-panel";
+import { MonthNotesPanel } from "@/components/month/month-notes-panel";
 import { MonthEmptyHeader, MonthPageHeader } from "@/components/month/month-page-header";
 import { BudgetCategoryList } from "@/components/spending/category-spending-list";
 import { SpendingBreakdown } from "@/components/spending/spending-breakdown";
@@ -28,6 +29,7 @@ import {
   getMonthTransactions,
 } from "@/lib/queries/finance";
 import { buildMonthImportCoverage, getLastImportUploadForMonthByCanonicalAccount } from "@/lib/queries/import-coverage";
+import { getMonthNoteBody } from "@/lib/queries/month-notes";
 import { getUser } from "@/lib/supabase/server";
 import { ImportCoveragePanel } from "@/components/accounts/import-coverage";
 
@@ -42,12 +44,14 @@ export default async function MonthPage({
   const user = await getUser();
   if (!user) notFound();
 
-  const [{ transactions, categories }, accounts, metrics, budgets] = await Promise.all([
-    getMonthTransactions(month),
-    getActiveAccounts(),
-    getDashboardMetrics(month),
-    getBudgetComparison(month),
-  ]);
+  const [{ transactions, categories }, accounts, metrics, budgets, noteBody] =
+    await Promise.all([
+      getMonthTransactions(month),
+      getActiveAccounts(),
+      getDashboardMetrics(month),
+      getBudgetComparison(month),
+      getMonthNoteBody(month),
+    ]);
 
   const deleteTargets = getDeleteMovementsTargets(
     accounts,
@@ -129,6 +133,8 @@ export default async function MonthPage({
             />
           </div>
         </SurfaceCard>
+
+        <MonthNotesPanel month={month} initialBody={noteBody} />
       </div>
     );
   }
@@ -276,6 +282,8 @@ export default async function MonthPage({
           See all movements for {monthNameOnly} →
         </Link>
       </SurfaceCard>
+
+      <MonthNotesPanel month={month} initialBody={noteBody} />
     </div>
   );
 }

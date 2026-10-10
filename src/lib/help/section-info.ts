@@ -56,7 +56,7 @@ export const SECTION_INFO: Record<SectionInfoKey, SectionInfoContent> = {
   "month.page": {
     title: "Month",
     paragraphs: [
-      "One month’s KPIs, import coverage, spending breakdown, and latest movements.",
+      "One month’s KPIs, import coverage, spending breakdown, latest movements, and notes.",
     ],
     sections: [
       {
@@ -75,6 +75,12 @@ export const SECTION_INFO: Record<SectionInfoKey, SectionInfoContent> = {
         title: "Recent movements",
         paragraphs: [
           "Latest transactions in the month. Use Movements for full search and edits.",
+        ],
+      },
+      {
+        title: "Notes",
+        paragraphs: [
+          "Bullet notes for the month. Save each point on its row; use the empty line at the bottom to add another.",
         ],
       },
     ],
